@@ -1,11 +1,12 @@
 {
   "default_strategy": "balanced",
-  "free_reserve": { "min_gb": 8, "pct": 0.10 },
+  "free_reserve": { "min_gb": 15, "pct": 0.0 },
   "strategies": {
     "balanced": {
-      "interval_s": 3,
+      "interval_s": 5,
       "metrics_always_on": true,
       "actions_enabled": false,
+      "thermal": { "target_c": 85, "ramp_full_seconds": 4 },
       "ram": {
         "soft_pct": 0.80,
         "hard_pct": 0.90
@@ -22,9 +23,10 @@
       }
     },
     "performance": {
-      "interval_s": 2,
+      "interval_s": 5,
       "metrics_always_on": true,
       "actions_enabled": false,
+      "thermal": { "target_c": 85, "ramp_full_seconds": 4 },
       "ram": {
         "soft_pct": 0.85,
         "hard_pct": 0.95
@@ -44,6 +46,7 @@
       "interval_s": 5,
       "metrics_always_on": true,
       "actions_enabled": false,
+      "thermal": { "target_c": 85, "ramp_full_seconds": 4 },
       "ram": {
         "soft_pct": 0.70,
         "hard_pct": 0.85
