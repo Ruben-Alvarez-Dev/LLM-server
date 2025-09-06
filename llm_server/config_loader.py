@@ -115,6 +115,7 @@ def build_effective_config() -> Dict[str, Any]:
         # models root outside this repo (parent directory)
         "models_root": str((ROOT.parent / "models").resolve()),
         "processes": profile.get("processes", {}),
+        "vision": profile.get("vision", {"model": "qwen2-vl-7b-instruct-q4_k_m"}),
         "notes": profile.get("notes", ""),
     }
     return cfg

@@ -13,6 +13,11 @@ from .generation import generate_with_llama_cli, speculative_generate
 from .tenancy import require_tenant
 from .messaging_stub import KafkaProducerStub
 from .memory_client import MemoryClient
+from .schemas import tool_list, get_schema_by_name
+from .vision import analyze as vision_analyze
+from .embeddings import embed_texts
+from .voice import transcribe as voice_transcribe, tts as voice_tts
+from .research import web_search
 
 
 class ChatMessage(BaseModel):
@@ -68,6 +73,167 @@ def _topic_namer(tenant: str, domain: str) -> str:
 def list_models(request: Request):
     reg, _, cfg = get_resources(request)
     return {"object": "list", "data": [{"id": m.name, "object": "model"} for m in reg.list()]}
+
+
+@router.get("/info")
+def info(request: Request):
+    _, _, cfg = get_resources(request)
+    base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
+    agents_prefix = base + 100
+    models_prefix = base + 200
+    return {
+        "name": "llm-server",
+        "version": "0.1.0",
+        "profile": cfg.get("profile_name"),
+        "ports": cfg.get("ports", {}),
+        "vision": cfg.get("vision", {}),
+        "port_blocks": {
+            "agents": {"prefix": agents_prefix, "range": [agents_prefix + 1, agents_prefix + 99]},
+            "models": {"prefix": models_prefix, "range": [models_prefix + 1, models_prefix + 99]},
+            "rule": "If base is B000, agents=B100+NN, models=B200+NN; ports ending in 0 are HUBs",
+        },
+        "endpoints": {
+            "openapi": "/openapi.json",
+            "docs": "/docs",
+            "health": "/healthz",
+            "ready": "/readyz",
+            "metrics": "/metrics",
+            "models": "/v1/models",
+            "chat": "/v1/chat/completions",
+            "completions": "/v1/completions",
+            "memory_search": "/v1/memory/search",
+            "vision_analyze": "/v1/vision/analyze",
+            "embeddings": "/v1/embeddings",
+            "voice_transcribe": "/v1/voice/transcribe",
+            "voice_tts": "/v1/voice/tts",
+            "research_search": "/v1/research/search",
+            "tools": "/v1/tools",
+            "schemas": "/schemas/{name}.json",
+            "ports": "/v1/ports",
+        },
+        "headers": {"request_id": "X-Request-Id", "tenant": {"name": "X-Tenant-Id", "status": "disabled"}},
+    }
+
+
+@router.get("/v1/tools")
+def list_tools():
+    return {"tools": tool_list()}
+
+
+@router.get("/schemas/{name}.json")
+def schema_by_name(name: str):
+    try:
+        sch = get_schema_by_name(name)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="schema not found")
+    return JSONResponse(sch)
+
+
+    
+
+
+@router.get("/v1/ports")
+def ports_map(request: Request):
+    reg, _, cfg = get_resources(request)
+    base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
+    agents_prefix = base + 100
+    models_prefix = base + 200
+    # Only hub endpoints (0-ending). Individuals (1-9) not exposed in this release.
+    hubs = [
+        {"name": "orchestrator", "port": agents_prefix + 10},
+        {"name": "vision", "port": models_prefix + 20},
+        {"name": "embeddings", "port": models_prefix + 30},
+        {"name": "voice", "port": models_prefix + 40},
+        {"name": "research", "port": models_prefix + 50},
+    ]
+    return {
+        "base": base,
+        "ranges": {
+            "agents": [agents_prefix + 1, agents_prefix + 99],
+            "models": [models_prefix + 1, models_prefix + 99],
+        },
+        "hubs": hubs,
+        "rule": "Ports ending in 0 are HUB endpoints; individuals (1-9) are not exposed",
+    }
+
+
+class VisionImage(BaseModel):
+    url: Optional[str] = None
+    base64: Optional[str] = None
+    purpose: Optional[str] = None
+
+
+class VisionAnalyzeRequest(BaseModel):
+    images: List[VisionImage]
+    prompt: Optional[str] = None
+    tasks: Optional[List[str]] = None
+    ocr: Optional[str] = "auto"
+
+
+@router.post("/v1/vision/analyze")
+def vision_analyze_endpoint(req: VisionAnalyzeRequest, request: Request):
+    imgs = [
+        {k: v for k, v in {
+            "url": i.url, "base64": i.base64, "purpose": i.purpose
+        }.items() if v is not None}
+        for i in req.images
+    ]
+    out = vision_analyze(imgs, prompt=req.prompt, tasks=req.tasks, ocr_mode=req.ocr or "auto")
+    return JSONResponse(out)
+
+
+class EmbeddingsRequest(BaseModel):
+    model: Optional[str] = None
+    input: Any
+    encoding_format: Optional[str] = "float"
+    dimensions: Optional[int] = 256
+
+
+@router.post("/v1/embeddings")
+def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
+    texts = req.input if isinstance(req.input, list) else [req.input]
+    vecs = embed_texts([str(t) for t in texts], dim=int(req.dimensions or 256))
+    if req.encoding_format == "base64":
+        import base64, array
+        data_items = []
+        for i, v in enumerate(vecs):
+            arr = array.array('f', v).tobytes()
+            data_items.append({"object": "embedding", "index": i, "embedding": base64.b64encode(arr).decode("ascii")})
+    else:
+        data_items = [{"object": "embedding", "index": i, "embedding": v} for i, v in enumerate(vecs)]
+    return JSONResponse({"object": "list", "data": data_items, "model": req.model or "stub-embeddings", "usage": {"prompt_tokens": 0, "total_tokens": 0}})
+
+
+class VoiceTranscribeRequest(BaseModel):
+    audio: Dict[str, Optional[str]]
+    language: Optional[str] = None
+
+
+@router.post("/v1/voice/transcribe")
+def voice_transcribe_endpoint(req: VoiceTranscribeRequest):
+    return JSONResponse(voice_transcribe(audio_base64=req.audio.get("base64"), url=req.audio.get("url"), language=req.language))
+
+
+class VoiceTTSRequest(BaseModel):
+    text: str
+    voice: Optional[str] = None
+    format: Optional[str] = "mp3"
+
+
+@router.post("/v1/voice/tts")
+def voice_tts_endpoint(req: VoiceTTSRequest):
+    return JSONResponse(voice_tts(text=req.text, voice=req.voice, format=req.format or "mp3"))
+
+
+class ResearchSearchRequest(BaseModel):
+    query: str
+    top_k: Optional[int] = 5
+    site: Optional[str] = None
+
+
+@router.post("/v1/research/search")
+def research_search_endpoint(req: ResearchSearchRequest):
+    return JSONResponse(web_search(req.query, top_k=int(req.top_k or 5), site=req.site))
 
 
 @router.post("/v1/completions")
@@ -139,6 +305,43 @@ def chat_completions(req: ChatRequest, request: Request, x_tenant_id: Optional[s
         else:
             parts.append(str(m.content))
     prompt = "\n".join(parts)
+
+    # Function-calling (prep): if an explicit tool_choice=function is provided
+    # we emit a tool_calls response instead of model output. This primes
+    # integration with OpenAI tools/tool_choice without full planning.
+    tc = req.tool_choice
+    chosen_fn = None
+    if isinstance(tc, dict) and tc.get("type") == "function":
+        f = tc.get("function") or {}
+        chosen_fn = f.get("name")
+    # Explicitly support memory.search as a first tool
+    if chosen_fn == "memory.search":
+        # naive args: use the latest user content as the query
+        q = ""
+        for m in reversed(req.messages):
+            if (m.role or "").lower() == "user":
+                if isinstance(m.content, list):
+                    q = " ".join([p.get("text", "") if isinstance(p, dict) else str(p) for p in m.content])
+                else:
+                    q = str(m.content)
+                break
+        tool_call = {
+            "id": f"call-{int(time.time()*1000)}",
+            "type": "function",
+            "function": {"name": "memory.search", "arguments": json.dumps({"query": q, "k": 5})},
+        }
+        return JSONResponse({
+            "id": f"chatcmpl-{int(time.time()*1000)}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": req.model,
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "tool_calls": [tool_call]},
+                "finish_reason": "tool_calls",
+            }],
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        })
 
     # Continue-mode presets
     overrides = {}

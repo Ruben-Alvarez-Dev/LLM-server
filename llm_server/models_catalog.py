@@ -19,5 +19,12 @@ CATALOG: Dict[str, Dict[str, str]] = {
         "file": "Phi-4-mini-instruct-Q4_K_M.gguf",
         "provider": "HuggingFace",
     },
+    # Vision LLM (baseline, conservative quant)
+    "qwen2-vl-7b-instruct-q4_k_m": {
+        "repo": "Qwen/Qwen2-VL-7B-Instruct-GGUF",
+        "file": "Qwen2-VL-7B-Instruct-Q4_K_M.gguf",
+        "provider": "HuggingFace",
+        # optional mmproj file for llama.cpp multimodal; configurable per deploy
+        "mmproj": "Qwen2-VL-7B-Instruct-mmproj.gguf"
+    },
 }
-

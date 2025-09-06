@@ -14,6 +14,11 @@
       "name": "phi-4-mini-instruct",
       "est_ram_gb": 5,
       "context_max": 16384
+    },
+    {
+      "name": "qwen2-vl-7b-instruct-q4_k_m",
+      "est_ram_gb": 6,
+      "context_max": 8192
     }
   ]
 }
