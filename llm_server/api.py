@@ -40,6 +40,7 @@ class ChatRequest(BaseModel):
     continue_mode: Optional[str] = None
     act_as: Optional[str] = None
     reasoning: Optional[Dict[str, Any]] = None
+    server_tools_execute: Optional[bool] = None
 
 
 class CompletionRequest(BaseModel):
@@ -372,23 +373,50 @@ def chat_completions(req: ChatRequest, request: Request, x_tenant_id: Optional[s
                 else:
                     q = str(m.content)
                 break
-        tool_call = {
-            "id": f"call-{int(time.time()*1000)}",
-            "type": "function",
-            "function": {"name": "memory.search", "arguments": json.dumps({"query": q, "k": 5})},
-        }
-        return JSONResponse({
-            "id": f"chatcmpl-{int(time.time()*1000)}",
-            "object": "chat.completion",
-            "created": int(time.time()),
-            "model": req.model,
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "tool_calls": [tool_call]},
-                "finish_reason": "tool_calls",
-            }],
-            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-        })
+        # Optional closed-loop execution (feature flag or explicit request)
+        execute = bool(req.server_tools_execute) or os.getenv("FC_CLOSED_LOOP", "0") in ("1","true","on")
+        if execute:
+            try:
+                res = mem_client.search(q, k=5)
+            except Exception:
+                res = []
+            summary_lines = []
+            for r in res[:5]:
+                rid = r.get("id")
+                sc = r.get("score")
+                txt = r.get("text", "")
+                summary_lines.append(f"- {rid} (score {sc}): {txt}")
+            content = "Memory search results:\n" + ("\n".join(summary_lines) if summary_lines else "<no results>")
+            return JSONResponse({
+                "id": f"chatcmpl-{int(time.time()*1000)}",
+                "object": "chat.completion",
+                "created": int(time.time()),
+                "model": req.model,
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "content": content},
+                    "finish_reason": "stop",
+                }],
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            })
+        else:
+            tool_call = {
+                "id": f"call-{int(time.time()*1000)}",
+                "type": "function",
+                "function": {"name": "memory.search", "arguments": json.dumps({"query": q, "k": 5})},
+            }
+            return JSONResponse({
+                "id": f"chatcmpl-{int(time.time()*1000)}",
+                "object": "chat.completion",
+                "created": int(time.time()),
+                "model": req.model,
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "tool_calls": [tool_call]},
+                    "finish_reason": "tool_calls",
+                }],
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            })
 
     # Continue-mode presets
     overrides = {}

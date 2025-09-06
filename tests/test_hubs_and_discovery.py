@@ -110,3 +110,12 @@ def test_function_calling_prep_memory_search():
         msg = ch.get('message',{})
         assert 'tool_calls' in msg
 
+    # Closed loop on demand
+    payload['server_tools_execute'] = True
+    r2 = client.post('/v1/chat/completions', json=payload)
+    assert r2.status_code in (200, 400)
+    if r2.status_code == 200:
+        j2 = r2.json()
+        ch2 = j2.get('choices',[{}])[0]
+        msg2 = ch2.get('message',{})
+        assert 'content' in msg2 and isinstance(msg2['content'], str)
