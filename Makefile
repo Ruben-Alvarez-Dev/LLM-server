@@ -36,7 +36,14 @@ mcp.run:
 
 .PHONY: test
 test:
-	@. .venv/bin/activate; pytest -q
+	@. .venv/bin/activate; PYTHONPATH=. pytest -q
+
+.PHONY: logs.enable logs.tail
+logs.enable:
+	@mkdir -p logs; echo "Enable file logging by exporting LOG_TO_FILE=1 (and optional LOG_FILE/LOG_DIR)."
+
+logs.tail:
+	@mkdir -p logs; tail -f logs/llm-server.jsonl
 
 # llama.cpp setup and build (Metal on macOS)
 LLAMA_DIR=vendor/llama.cpp
