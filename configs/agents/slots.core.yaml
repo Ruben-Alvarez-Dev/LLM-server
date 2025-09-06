@@ -1,0 +1,85 @@
+{
+  "agents": [
+    {
+      "id": "slot01",
+      "slot": "01",
+      "role": "router",
+      "approach": "diagnostic-routing",
+      "model": "default",
+      "description": "Diagnostica la intención y enruta: pedir aclaraciones si falta contexto.",
+      "params": { "temperature": 0.2, "top_p": 0.9, "max_tokens": 256 }
+    },
+    {
+      "id": "slot02",
+      "slot": "02",
+      "role": "reasoner",
+      "approach": "deep-reason",
+      "model": "default",
+      "description": "Razonamiento estructurado y trade-offs; prepara supuestos y criterios de aceptación.",
+      "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 512 }
+    },
+    {
+      "id": "slot03",
+      "slot": "03",
+      "role": "planner",
+      "approach": "plan-steps",
+      "model": "default",
+      "description": "Planifica pasos mínimos verificables y puntos de validación.",
+      "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 512 }
+    },
+    {
+      "id": "slot04",
+      "slot": "04",
+      "role": "fast_action",
+      "approach": "quick-fix",
+      "model": "default",
+      "description": "Cambios pequeños y seguros (<10 líneas), prioriza velocidad y bajo riesgo.",
+      "params": { "temperature": 0.3, "top_p": 0.9, "max_tokens": 128 }
+    },
+    {
+      "id": "slot05",
+      "slot": "05",
+      "role": "retriever",
+      "approach": "memory-bridge",
+      "model": "default",
+      "description": "Orquesta llamadas a memory.search (HTTP/MCP) y compone contexto.",
+      "params": { "temperature": 0.2, "top_p": 0.9, "max_tokens": 256 }
+    },
+    {
+      "id": "slot06",
+      "slot": "06",
+      "role": "verifier",
+      "approach": "fast-verify",
+      "model": "default",
+      "description": "Verificación ligera: linting lógico, revisión de diffs y chequeos rápidos.",
+      "params": { "temperature": 0.0, "top_p": 0.9, "max_tokens": 128 }
+    },
+    {
+      "id": "slot08",
+      "slot": "08",
+      "role": "coder",
+      "approach": "implement-safe",
+      "model": "default",
+      "description": "Implementa cambios focalizados, siguiendo estilo del repo y límites.",
+      "params": { "temperature": 0.2, "top_p": 0.9, "max_tokens": 512 }
+    },
+    {
+      "id": "slot09",
+      "slot": "09",
+      "role": "debugger",
+      "approach": "failure-analysis",
+      "model": "default",
+      "description": "Analiza fallos/logs, minimiza repro y propone parches.",
+      "params": { "temperature": 0.2, "top_p": 0.9, "max_tokens": 512 }
+    },
+    {
+      "id": "slot10",
+      "slot": "10",
+      "role": "finalizer",
+      "approach": "summarize-handoff",
+      "model": "default",
+      "description": "Cierra tareas con resumen, cambios y siguientes pasos.",
+      "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 256 }
+    }
+  ]
+}

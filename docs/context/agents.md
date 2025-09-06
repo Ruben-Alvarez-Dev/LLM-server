@@ -26,7 +26,20 @@ Momento y Cómo ocurre
    - Podemos producir `llm.<tenant>.agents.plan.v1` y que un worker compile y notifique.
 
 Ejemplos
-- Plantilla A (3 agentes): Router → Coder → Verifier (x2)
+- Plantilla A (core slots): Router(01) → Reasoner(02) → Planner(03) → Coder(08) → Verifier(06) → Finalizer(10)
 - Desde cero: “Quiero Router, Planner, Coder, Reviewer de estilo y Reviewer de lógica; Planner siempre consulta memoria”.
   - El compilador genera agents[] y edges[] con `when` adecuados; policies incluyen `verify_steps: 2`.
+Slots y Enfoques (referencia; cada perfil define su plantilla)
+- 01 Router — diagnostic-routing (referencia)
+- 02 Reasoner — deep-reason (referencia)
+- 03 Planner — plan-steps (referencia)
+- 04 Fast Action — quick-fix (referencia)
+- 05 Retriever — memory-bridge (referencia)
+- 06 Verifier — fast-verify (referencia)
+- 08 Coder — implement-safe (referencia)
+- 09 Debugger — failure-analysis (referencia)
+- 10 Finalizer — summarize-handoff (referencia)
 
+Contratos
+- La orquesta expone un único HUB (entrada/salida) y el ruteo interno es asíncrono (mensajería). No hay endpoints públicos por agente.
+- Servicios externos a la orquesta (visión, voz, research, embeddings, etc.) sí exponen endpoints propios según el perfil.
