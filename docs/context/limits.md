@@ -27,4 +27,10 @@ Recommended Residency
 - Phi-4-mini-instruct: ~5 GB
 - Sum resident: ~34 GB → headroom: ~36 GB (≥ 5 GB ✓)
 
+Generation Parameters
+- Configure defaults in `configs/limits.yaml` under `gen_defaults`:
+  - temperature, top_p, top_k, repeat_penalty, max_tokens, seed
+- Environment overrides are supported for quick tuning:
+  - `GEN_TEMPERATURE`, `GEN_TOP_P`, `GEN_TOP_K`, `GEN_REPEAT_PENALTY`, `GEN_MAX_TOKENS`, `GEN_SEED`
+
 See `configs/*.yaml` for concrete windows and concurrency, and run `make validate` to see the RAM table.
