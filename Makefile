@@ -7,3 +7,11 @@ codex:
 
 validate:
 	@$(PY) tools/validate.py
+
+.PHONY: run models
+
+run:
+	@$(PY) -c "import llm_server.main as m; import sys; sys.exit(m.main())"
+
+models:
+	@$(PY) tools/models_sync.py --create --check

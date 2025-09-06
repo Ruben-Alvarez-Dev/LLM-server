@@ -1,0 +1,96 @@
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict, Tuple
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_json_or_yaml(path: Path) -> Dict[str, Any]:
+    text = path.read_text()
+    # Try JSON first (our YAML files are JSON-compatible), then YAML if available
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        try:
+            import yaml  # type: ignore
+
+            return yaml.safe_load(text)
+        except Exception as e:  # pragma: no cover - optional dependency
+            raise RuntimeError(f"Failed to parse {path} as JSON or YAML: {e}")
+
+
+def load_runtime_profile_name() -> str:
+    p = ROOT / "runtime" / "current_profile"
+    return p.read_text().strip()
+
+
+def load_profile(profile_name: str) -> Dict[str, Any]:
+    path = ROOT / "configs" / "custom_profiles" / f"{profile_name}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Profile file not found: {path}")
+    return _load_json_or_yaml(path)
+
+
+def load_models() -> Dict[str, Any]:
+    path = ROOT / "configs" / "models.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Models file not found: {path}")
+    return _load_json_or_yaml(path)
+
+
+def load_limits() -> Dict[str, Any]:
+    path = ROOT / "configs" / "limits.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Limits file not found: {path}")
+    return _load_json_or_yaml(path)
+
+
+def effective_ports(profile: Dict[str, Any]) -> Tuple[int, int, int]:
+    ports = profile.get("ports") or {}
+    return int(ports.get("orchestrator", 8080)), int(ports.get("llm_server", 8081)), int(ports.get("memory_server", 8082))
+
+
+def env_override(port_key: str, default: int) -> int:
+    v = os.getenv(port_key)
+    if v is None:
+        return default
+    try:
+        return int(v)
+    except ValueError:
+        return default
+
+
+def build_effective_config() -> Dict[str, Any]:
+    """Merge order: env overrides -> profile -> defaults.
+
+    Defaults are minimal; profile provides most values; ENV can override ports.
+    """
+    profile_name = load_runtime_profile_name()
+    profile = load_profile(profile_name)
+    models_cfg = load_models()
+    limits_cfg = load_limits()
+
+    orch, llm_port, mem_port = effective_ports(profile)
+    # ENV overrides
+    orch = env_override("PORT_ORCHESTRATOR", orch)
+    llm_port = env_override("PORT_LLM_SERVER", llm_port)
+    mem_port = env_override("PORT_MEMORY_SERVER", mem_port)
+
+    cfg = {
+        "profile_name": profile_name,
+        "ports": {"orchestrator": orch, "llm_server": llm_port, "memory_server": mem_port},
+        "concurrency": profile.get("concurrency", {}),
+        "ram_budget_gb": profile.get("ram_budget_gb", 70),
+        "memory_server_ram_gb": profile.get("memory_server_ram_gb", 10),
+        "selected_models": profile.get("selected_models", []),
+        "models": models_cfg.get("models", []),
+        "limits": limits_cfg,
+        # models root outside this repo (parent directory)
+        "models_root": str((ROOT.parent / "models").resolve()),
+        "processes": profile.get("processes", {}),
+        "notes": profile.get("notes", ""),
+    }
+    return cfg
+
