@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "embeddings_profile.schema.json",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["name", "dimensions"],
+    "additionalProperties": true,
+    "properties": {
+      "name": { "type": "string", "minLength": 1 },
+      "dimensions": { "type": "integer", "minimum": 32, "maximum": 2048 },
+      "purpose": { "type": "string" }
+    }
+  },
+  "uniqueItems": false
+}
+

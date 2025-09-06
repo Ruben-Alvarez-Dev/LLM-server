@@ -106,6 +106,22 @@ def validate_profile(profile_data: dict, model_names: set):
     require(isinstance(mem_ram, (int,float)) and mem_ram >= 0, 'memory_server_ram_gb must be >= 0')
     notes = profile_data['notes']
     require(isinstance(notes, str), 'notes must be a string')
+    # optional embeddings services
+    embs = profile_data.get('embeddings', [])
+    if embs:
+        require(isinstance(embs, list), 'embeddings must be an array when present')
+        seen = set()
+        for e in embs:
+            require(isinstance(e, dict), 'each embeddings entry must be an object')
+            ename = e.get('name')
+            edim = e.get('dimensions')
+            epurp = e.get('purpose')
+            require(isinstance(ename, str) and ename, 'embeddings.name must be non-empty string')
+            require(ename not in seen, f'duplicate embeddings name: {ename}')
+            seen.add(ename)
+            require(isinstance(edim, int) and 32 <= edim <= 2048, f'embeddings.{ename}.dimensions must be int 32..2048')
+            if epurp is not None:
+                require(isinstance(epurp, str), f'embeddings.{ename}.purpose must be string when present')
     return name, sel, int(ram), int(mem_ram)
 
 def read_current_profile_name():
@@ -125,6 +141,14 @@ def print_ram_table(models, selected, ram_budget_gb):
         print(f"{m['name']}\t{m['est_ram_gb']}\t{str(resident).lower()}\t{headroom}")
     print(f"\nTotal resident: {total_resident} GB; Headroom: {headroom} GB (budget {ram_budget_gb} GB)")
     return total_resident, headroom
+
+def print_embeddings_table(profile_data: dict):
+    embs = profile_data.get('embeddings', [])
+    if not embs:
+        return
+    print("\nembeddings\tdimensions\tpurpose")
+    for e in embs:
+        print(f"{e.get('name')}\t{e.get('dimensions')}\t{e.get('purpose','')}")
 
 def main():
     try:
@@ -150,6 +174,7 @@ def main():
 
         # RAM table
         total_resident, headroom = print_ram_table(models, selected_models, ram_budget_gb)
+        print_embeddings_table(profile_data)
         require(total_resident <= ram_budget_gb, 'Resident models exceed ram_budget_gb')
         require(headroom >= 5, 'Headroom must be at least 5 GB')
 
