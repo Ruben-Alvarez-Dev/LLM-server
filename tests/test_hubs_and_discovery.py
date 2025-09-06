@@ -1,4 +1,5 @@
 import base64
+import os
 
 
 def _tiny_png_base64():
