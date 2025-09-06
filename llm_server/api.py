@@ -20,6 +20,7 @@ from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
 from .logging_utils import get_logger
 from .agent_planner import compile_nl_to_dsl, validate_graph, save_current_plan
+from .housekeeper import _beacon_ram, _beacon_ssd, _mem_stats, _disk_stats  # type: ignore
 
 
 class ChatMessage(BaseModel):
@@ -90,12 +91,42 @@ def info(request: Request):
     strategies = hk_cfg.get("strategies", {}) or {}
     active = getattr(request.app.state, 'housekeeper_strategy', None) or hk_cfg.get("default_strategy", "balanced")
     pol = strategies.get(active, {})
+    # Housekeeper policy and live snapshot
+    snap = getattr(request.app.state, 'housekeeper_snapshot', None)
+    pol = strategies.get(active, {})
+    # Compute beacons from snapshot or on-the-fly
+    def _compute_beacons():
+        try:
+            if snap:
+                ram_b = snap.get('ram', {}).get('beacon', 'unknown')
+                ssd_b = snap.get('ssd', {}).get('beacon', 'unknown')
+                return ram_b, ssd_b
+            # fallback live compute
+            mem = _mem_stats()
+            disk = _disk_stats(str((__import__("pathlib").Path(pol.get("ssd", {}).get("path", cfg.get("models_root", "."))).resolve())) )
+            # free reserve/headroom
+            fr = (cfg.get('housekeeper', {}) or {}).get('free_reserve', {}) or {}
+            min_gb = float(fr.get('min_gb', 8.0)); pct = float(fr.get('pct', 0.10))
+            total_gb = float(mem.get('total_gb', 0.0))
+            free_reserve_gb = max(min_gb, total_gb * pct)
+            headroom_gb = mem.get('free_gb', 0.0) - free_reserve_gb
+            ram_b = _beacon_ram(headroom_gb)
+            ssd_pol = pol.get('ssd', {}) or {}
+            ssd_b = _beacon_ssd(disk.get('pressure', 0.0), disk.get('free_gb', 0.0), float(ssd_pol.get('soft_pct', 0.75)), float(ssd_pol.get('hard_pct', 0.85)))
+            return ram_b, ssd_b
+        except Exception:
+            return 'unknown', 'unknown'
+
+    ram_beacon, ssd_beacon = _compute_beacons()
     hk = {
         "enabled": True,
         "strategy": active,
         "interval_s": pol.get("interval_s", 10),
         "ram_watermarks": {"soft_pct": pol.get("ram", {}).get("soft_pct", 0.8), "hard_pct": pol.get("ram", {}).get("hard_pct", 0.9)},
         "ssd_watermarks": {"soft_pct": pol.get("ssd", {}).get("soft_pct", 0.75), "hard_pct": pol.get("ssd", {}).get("hard_pct", 0.85)},
+        "actions_enabled": bool(pol.get("actions_enabled", False)),
+        "beacons": {"ram": ram_beacon, "ssd": ssd_beacon},
+        **({"snapshot": snap} if snap else {}),
     }
     return {
         "name": "llm-server",
@@ -128,6 +159,9 @@ def info(request: Request):
             "embeddings_named": "/v1/embeddings/{name}",
             "embeddings_ready": "/v1/embeddings/ready",
             "embeddings_named_ready": "/v1/embeddings/{name}/ready",
+            "housekeeper_policy": "/admin/housekeeper/policy",
+            "housekeeper_strategy": "/admin/housekeeper/strategy",
+            "housekeeper_actions": "/admin/housekeeper/actions",
             **({
                 "voice_transcribe": "/v1/voice/transcribe",
                 "voice_tts": "/v1/voice/tts",
@@ -446,6 +480,31 @@ def housekeeper_policy(request: Request):
     pol = getattr(request.app.state, 'housekeeper_policy', {})
     name = getattr(request.app.state, 'housekeeper_strategy', None)
     return JSONResponse({"strategy": name, "policy": pol})
+
+
+class HousekeeperActionsRequest(BaseModel):
+    enabled: bool
+
+
+@router.post("/admin/housekeeper/actions")
+def housekeeper_actions(req: HousekeeperActionsRequest, request: Request):
+    # Toggle actions_enabled at runtime; persists in in-memory policy
+    cfg = request.app.state.config
+    hk_cfg = cfg.get("housekeeper", {}) or {}
+    strategies = hk_cfg.get("strategies", {}) or {}
+    name = getattr(request.app.state, 'housekeeper_strategy', None) or hk_cfg.get("default_strategy", "balanced")
+    pol = getattr(request.app.state, 'housekeeper_policy', None) or strategies.get(name, {})
+    # mutate policy and state
+    try:
+        pol["actions_enabled"] = bool(req.enabled)
+        request.app.state.housekeeper_policy = pol  # type: ignore[attr-defined]
+    except Exception:
+        pass
+    try:
+        log.info("housekeeper.actions_toggle", extra={"enabled": bool(req.enabled), "strategy": name})
+    except Exception:
+        pass
+    return JSONResponse({"status": "accepted", "strategy": name, "actions_enabled": bool(req.enabled)})
 
 
 @router.get("/v1/research/ready")
