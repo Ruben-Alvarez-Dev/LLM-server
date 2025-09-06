@@ -8,6 +8,7 @@ except Exception:  # pragma: no cover - optional dependency at dev time
     JSONResponse = None  # type: ignore
 
 from .config_loader import build_effective_config
+from .registry import ModelRegistry
 from .metrics import metrics
 
 
@@ -26,10 +27,12 @@ def create_app() -> Any:
     def healthz() -> Dict[str, Any]:
         return {"status": "ok", "profile": cfg["profile_name"]}
 
+    registry = ModelRegistry()
+    registry.refresh()
+
     @app.get("/readyz")
     def readyz() -> Dict[str, Any]:
-        # Later: check model registry readiness
-        return {"ready": True}
+        return registry.readiness_report()
 
     @app.get("/metrics")
     def metrics_endpoint():
@@ -37,5 +40,5 @@ def create_app() -> Any:
 
     # Attach config for downstream use
     app.state.config = cfg  # type: ignore[attr-defined]
+    app.state.registry = registry  # type: ignore[attr-defined]
     return app
-

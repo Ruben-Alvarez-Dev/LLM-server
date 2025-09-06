@@ -6,29 +6,33 @@ import sys
 import urllib.request
 from pathlib import Path
 from typing import Dict, List
+try:
+    # Prefer the central catalog
+    from llm_server.models_catalog import CATALOG as SOURCES  # type: ignore
+except Exception:
+    # Fallback to internal copy (should not happen when package import works)
+    SOURCES: Dict[str, Dict[str, str]] = {
+        "deepseek-r1-qwen-32b-q4_k_m": {
+            "repo": "lmstudio-community/DeepSeek-R1-Distill-Qwen-32B-GGUF",
+            "file": "DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf",
+            "provider": "HuggingFace",
+        },
+        "qwen2.5-14b-instruct-q4_k_m": {
+            "repo": "Qwen/Qwen2.5-14B-Instruct-GGUF",
+            "file": "Qwen2.5-14B-Instruct-Q4_K_M.gguf",
+            "provider": "HuggingFace",
+        },
+        "phi-4-mini-instruct": {
+            "repo": "microsoft/Phi-4-mini-instruct-GGUF",
+            "file": "Phi-4-mini-instruct-Q4_K_M.gguf",
+            "provider": "HuggingFace",
+        },
+    }
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS_DIR = ROOT.parent / "models"
 
 
-SOURCES: Dict[str, Dict[str, str]] = {
-    # Suggested sources (adjust to your preferred mirrors/providers)
-    "deepseek-r1-qwen-32b-q4_k_m": {
-        "repo": "lmstudio-community/DeepSeek-R1-Distill-Qwen-32B-GGUF",
-        "file": "DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf",
-        "provider": "HuggingFace",
-    },
-    "qwen2.5-14b-instruct-q4_k_m": {
-        "repo": "Qwen/Qwen2.5-14B-Instruct-GGUF",
-        "file": "Qwen2.5-14B-Instruct-Q4_K_M.gguf",
-        "provider": "HuggingFace",
-    },
-    "phi-4-mini-instruct": {
-        "repo": "microsoft/Phi-4-mini-instruct-GGUF",
-        "file": "Phi-4-mini-instruct-Q4_K_M.gguf",
-        "provider": "HuggingFace",
-    },
-}
 
 
 def load_models_cfg() -> List[Dict]:

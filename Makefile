@@ -16,6 +16,14 @@ run:
 models:
 	@$(PY) tools/models_sync.py --create --check
 
+.PHONY: models.verify
+models.verify:
+	@$(PY) - <<'PY'
+from llm_server.registry import ModelRegistry
+r=ModelRegistry(); r.refresh()
+print(r.readiness_report())
+PY
+
 # llama.cpp setup and build (Metal on macOS)
 LLAMA_DIR=vendor/llama.cpp
 

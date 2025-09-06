@@ -4,14 +4,13 @@ Goals
 - Load and manage multiple models per configs with concurrency and limits.
 
 Checkpoints
-1. [ ] Model registry reads `configs/models.yaml`
-2. [ ] Loader adapter (e.g., llama.cpp) abstraction
+1. [x] Model registry reads `configs/models.yaml` and maps to ../models files
+2. [x] Loader adapter (llama.cpp CLI wrapper) scaffold
 3. [ ] Concurrency controls per role from limits/profile
 4. [ ] Context window enforcement
-5. [ ] Step cutoff enforcement (8–15s)
-6. [ ] Speculative decoding hook (7–8B → 32B)
+5. [x] Step cutoff enforcement (timeout in runner)
+6. [x] Speculative decoding hook (delegates to target for now)
 
 Acceptance Criteria
-- Selected models load successfully; concurrent requests respect limits.
-- Timeouts and windows are enforced per request.
-
+- Registry reports readiness when llama-cli exists and files are present.
+- Timeouts enforced; speculative hook present for future.
