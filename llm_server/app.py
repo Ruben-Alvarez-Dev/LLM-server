@@ -10,6 +10,10 @@ except Exception:  # pragma: no cover - optional dependency at dev time
 from .config_loader import build_effective_config
 from .registry import ModelRegistry
 from .metrics import metrics
+try:
+    from .api import router as api_router
+except Exception:
+    api_router = None
 
 
 def create_app() -> Any:
@@ -44,6 +48,10 @@ def create_app() -> Any:
     @app.get("/metrics")
     def metrics_endpoint():
         return JSONResponse(metrics.snapshot())
+
+    # API endpoints
+    if api_router is not None:
+        app.include_router(api_router)
 
     # Attach config for downstream use
     app.state.config = cfg  # type: ignore[attr-defined]
