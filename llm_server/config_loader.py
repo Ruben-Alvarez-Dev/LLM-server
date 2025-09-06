@@ -47,6 +47,13 @@ def load_limits() -> Dict[str, Any]:
     return _load_json_or_yaml(path)
 
 
+def load_housekeeper() -> Dict[str, Any]:
+    path = ROOT / "configs" / "housekeeper.yaml"
+    if not path.exists():
+        return {"default_strategy": "balanced", "strategies": {}}
+    return _load_json_or_yaml(path)
+
+
 def effective_ports(profile: Dict[str, Any]) -> Tuple[int, int, int]:
     ports = profile.get("ports") or {}
     return int(ports.get("orchestrator", 8080)), int(ports.get("llm_server", 8081)), int(ports.get("memory_server", 8082))
@@ -71,6 +78,7 @@ def build_effective_config() -> Dict[str, Any]:
     profile = load_profile(profile_name)
     models_cfg = load_models()
     limits_cfg = load_limits()
+    hk_cfg = load_housekeeper()
 
     orch, llm_port, mem_port = effective_ports(profile)
     # ENV overrides
@@ -117,6 +125,7 @@ def build_effective_config() -> Dict[str, Any]:
         "processes": profile.get("processes", {}),
         "vision": profile.get("vision", {"model": "qwen2-vl-7b-instruct-q4_k_m"}),
         "embeddings": profile.get("embeddings", [{"name": "default", "dimensions": 256, "purpose": "general"}]),
+        "housekeeper": hk_cfg,
         "notes": profile.get("notes", ""),
     }
     return cfg

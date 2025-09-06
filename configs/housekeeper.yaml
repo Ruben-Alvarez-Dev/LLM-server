@@ -1,0 +1,63 @@
+{
+  "default_strategy": "balanced",
+  "strategies": {
+    "balanced": {
+      "interval_s": 10,
+      "metrics_always_on": true,
+      "actions_enabled": false,
+      "ram": {
+        "soft_pct": 0.80,
+        "hard_pct": 0.90
+      },
+      "ssd": {
+        "path": ".",
+        "soft_pct": 0.75,
+        "hard_pct": 0.85
+      },
+      "backpressure": {
+        "enable_soft": true,
+        "enable_hard": true,
+        "cooldown_s": 5
+      }
+    },
+    "performance": {
+      "interval_s": 5,
+      "metrics_always_on": true,
+      "actions_enabled": false,
+      "ram": {
+        "soft_pct": 0.85,
+        "hard_pct": 0.95
+      },
+      "ssd": {
+        "path": ".",
+        "soft_pct": 0.80,
+        "hard_pct": 0.92
+      },
+      "backpressure": {
+        "enable_soft": false,
+        "enable_hard": true,
+        "cooldown_s": 3
+      }
+    },
+    "safety": {
+      "interval_s": 15,
+      "metrics_always_on": true,
+      "actions_enabled": false,
+      "ram": {
+        "soft_pct": 0.70,
+        "hard_pct": 0.85
+      },
+      "ssd": {
+        "path": ".",
+        "soft_pct": 0.70,
+        "hard_pct": 0.82
+      },
+      "backpressure": {
+        "enable_soft": true,
+        "enable_hard": true,
+        "cooldown_s": 8
+      }
+    }
+  }
+}
+

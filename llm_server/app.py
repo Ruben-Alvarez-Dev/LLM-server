@@ -172,18 +172,28 @@ def create_app() -> Any:
     app.state.registry = registry  # type: ignore[attr-defined]
     app.state.concurrency = conc  # type: ignore[attr-defined]
 
-    # Background housekeeper (metrics only; optional)
+    # Background housekeeper (metrics-only currently). Metrics always-on per policy; env overrides supported.
     try:
         import os as _os
-        hk_enabled = _os.getenv("HOUSEKEEPER_ENABLED", "0") in ("1", "true", "on")
-        if hk_enabled:
-            interval_s = float(_os.getenv("HOUSEKEEPER_INTERVAL_S", "10"))
-            disk_path = str((__import__("pathlib").Path(cfg.get("models_root", ".")).resolve()))
+        hk_cfg = cfg.get("housekeeper", {}) or {}
+        strategies = hk_cfg.get("strategies", {}) or {}
+        default_strategy = hk_cfg.get("default_strategy", "balanced")
+        active_name = _os.getenv("HOUSEKEEPER_STRATEGY", default_strategy)
+        policy = strategies.get(active_name) or strategies.get(default_strategy) or {}
+        metrics_always_on = bool(policy.get("metrics_always_on", True))
+        # Env override retains backward compat
+        if _os.getenv("HOUSEKEEPER_ENABLED") in ("0", "false", "off"):
+            metrics_always_on = False
+        interval_s = float(_os.getenv("HOUSEKEEPER_INTERVAL_S", str(policy.get("interval_s", 10))))
+        disk_path = str((__import__("pathlib").Path(policy.get("ssd", {}).get("path", cfg.get("models_root", "."))).resolve()))
+        app.state.housekeeper_strategy = active_name  # type: ignore[attr-defined]
+        app.state.housekeeper_policy = policy  # type: ignore[attr-defined]
+        if metrics_always_on:
             hk = Housekeeper(app, interval_s=interval_s, disk_path=disk_path)
             app.state._housekeeper = hk  # type: ignore[attr-defined]
 
             @app.on_event("startup")
-            async def _hk_start():  # pragma: no cover - tiny async wrapper
+            async def _hk_start():  # pragma: no cover
                 try:
                     hk.start()
                 except Exception:

@@ -86,12 +86,16 @@ def info(request: Request):
     agents_prefix = base + 100
     models_prefix = base + 200
     voice_enabled = os.getenv("FEATURE_VOICE", "0") in ("1","true","on")
-    hk_enabled = os.getenv("HOUSEKEEPER_ENABLED", "0") in ("1","true","on")
+    hk_cfg = cfg.get("housekeeper", {}) or {}
+    strategies = hk_cfg.get("strategies", {}) or {}
+    active = getattr(request.app.state, 'housekeeper_strategy', None) or hk_cfg.get("default_strategy", "balanced")
+    pol = strategies.get(active, {})
     hk = {
-        "enabled": hk_enabled,
-        "interval_s": float(os.getenv("HOUSEKEEPER_INTERVAL_S", "10")) if hk_enabled else None,
-        "ram_watermarks": {"soft_pct": 0.8, "hard_pct": 0.9},
-        "ssd_watermarks": {"soft_pct": 0.75, "hard_pct": 0.85},
+        "enabled": True,
+        "strategy": active,
+        "interval_s": pol.get("interval_s", 10),
+        "ram_watermarks": {"soft_pct": pol.get("ram", {}).get("soft_pct", 0.8), "hard_pct": pol.get("ram", {}).get("hard_pct", 0.9)},
+        "ssd_watermarks": {"soft_pct": pol.get("ssd", {}).get("soft_pct", 0.75), "hard_pct": pol.get("ssd", {}).get("hard_pct", 0.85)},
     }
     return {
         "name": "llm-server",
@@ -101,6 +105,7 @@ def info(request: Request):
         "vision": cfg.get("vision", {}),
         "embeddings": cfg.get("embeddings", []),
         "housekeeper": hk,
+        "housekeeper_strategies": list(strategies.keys()),
         "port_blocks": {
             "agents": {"prefix": agents_prefix, "range": [agents_prefix + 1, agents_prefix + 99]},
             "models": {"prefix": models_prefix, "range": [models_prefix + 1, models_prefix + 99]},
@@ -401,6 +406,46 @@ def profile_switch(req: ProfileSwitchRequest, request: Request):
     # Report readiness snapshot
     rep = getattr(app.state, 'registry', None) and app.state.registry.readiness_report()
     return JSONResponse({"status": "accepted", "profile": req.name, "readiness": rep or {}})
+
+
+class HousekeeperSwitchRequest(BaseModel):
+    name: str
+
+
+@router.post("/admin/housekeeper/strategy")
+def housekeeper_switch(req: HousekeeperSwitchRequest, request: Request):
+    cfg = request.app.state.config
+    hk_cfg = cfg.get("housekeeper", {}) or {}
+    strategies = hk_cfg.get("strategies", {}) or {}
+    if req.name not in strategies:
+        raise HTTPException(status_code=404, detail="strategy not found")
+    pol = strategies[req.name]
+    # update app state
+    request.app.state.housekeeper_strategy = req.name  # type: ignore[attr-defined]
+    request.app.state.housekeeper_policy = pol  # type: ignore[attr-defined]
+    # restart thread if exists
+    hk = getattr(request.app.state, "_housekeeper", None)
+    try:
+        if hk:
+            hk.stop()
+    except Exception:
+        pass
+    try:
+        from .housekeeper import Housekeeper
+        disk_path = str((__import__("pathlib").Path(pol.get("ssd", {}).get("path", cfg.get("models_root", "."))).resolve()))
+        new_hk = Housekeeper(request.app, interval_s=float(pol.get("interval_s", 10)), disk_path=disk_path)
+        request.app.state._housekeeper = new_hk  # type: ignore[attr-defined]
+        new_hk.start()
+    except Exception:
+        pass
+    return JSONResponse({"status": "accepted", "strategy": req.name, "policy": pol})
+
+
+@router.get("/admin/housekeeper/policy")
+def housekeeper_policy(request: Request):
+    pol = getattr(request.app.state, 'housekeeper_policy', {})
+    name = getattr(request.app.state, 'housekeeper_strategy', None)
+    return JSONResponse({"strategy": name, "policy": pol})
 
 
 @router.get("/v1/research/ready")
