@@ -34,6 +34,10 @@ api.smoke:
 mcp.run:
 	@. .venv/bin/activate; python -c "import llm_server.mcp_server as m; m.main()"
 
+.PHONY: docs
+docs:
+	@. .venv/bin/activate; python -m pdoc -o docs/site llm_server || echo "Instala pdoc (pip install pdoc) para generar docs HTML"
+
 .PHONY: test
 test:
 	@. .venv/bin/activate; PYTHONPATH=. pytest -q

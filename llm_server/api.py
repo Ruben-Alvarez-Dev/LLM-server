@@ -1,4 +1,11 @@
 from __future__ import annotations
+"""Endpoints HTTP del LLM-server (compatibles con OpenAI y stubs varios).
+
+Incluye rutas para modelos, chat/completions (con y sin streaming), visión,
+embeddings, voz, research, memoria y administración (housekeeper).
+
+Docstrings en estilo Google.
+"""
 
 import json
 import os
@@ -76,12 +83,22 @@ def _topic_namer(tenant: str, domain: str) -> str:
 
 @router.get("/v1/models")
 def list_models(request: Request):
+    """Lista modelos registrados.
+
+    Returns:
+        dict: Objeto OpenAI-style con `data: [{id,object}]`.
+    """
     reg, _, cfg = get_resources(request)
     return {"object": "list", "data": [{"id": m.name, "object": "model"} for m in reg.list()]}
 
 
 @router.get("/info")
 def info(request: Request):
+    """Información de despliegue, endpoints, puertos y estado del housekeeper.
+
+    Returns:
+        dict: Metadatos, endpoints, bloques de puertos y `housekeeper`.
+    """
     _, _, cfg = get_resources(request)
     base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
     agents_prefix = base + 100
@@ -179,11 +196,17 @@ def info(request: Request):
 
 @router.get("/v1/tools")
 def list_tools():
+    """Lista de herramientas (MCP/OpenAI Tools) expuestas por el servidor."""
     return {"tools": tool_list()}
 
 
 @router.get("/schemas/{name}.json")
 def schema_by_name(name: str):
+    """Devuelve un esquema JSON por nombre.
+
+    Args:
+        name (str): Nombre lógico del esquema.
+    """
     try:
         sch = get_schema_by_name(name)
     except KeyError:
@@ -196,6 +219,7 @@ def schema_by_name(name: str):
 
 @router.get("/v1/ports")
 def ports_map(request: Request):
+    """Mapa de puertos asignados a hubs y rangos de agentes/modelos."""
     reg, _, cfg = get_resources(request)
     base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
     agents_prefix = base + 100
@@ -238,6 +262,7 @@ class VisionAnalyzeRequest(BaseModel):
 
 @router.post("/v1/vision/analyze")
 def vision_analyze_endpoint(req: VisionAnalyzeRequest, request: Request):
+    """Analiza imágenes con OCR opcional y prompt auxiliar."""
     imgs = [
         {k: v for k, v in {
             "url": i.url, "base64": i.base64, "purpose": i.purpose
@@ -254,6 +279,7 @@ def vision_analyze_endpoint(req: VisionAnalyzeRequest, request: Request):
 
 @router.get("/v1/vision/ready")
 def vision_ready():
+    """Estado de disponibilidad del servicio de visión (stub)."""
     return JSONResponse(vision_readiness())
 
 
@@ -267,6 +293,7 @@ class EmbeddingsRequest(BaseModel):
 
 @router.post("/v1/embeddings")
 def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
+    """Genera embeddings para uno o varios inputs."""
     cfg = request.app.state.config
     embeddings_cfg = cfg.get("embeddings", [])
     default_dim = int(embeddings_cfg[0].get("dimensions", 256)) if embeddings_cfg else 256
@@ -290,6 +317,7 @@ def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
 
 @router.post("/v1/embeddings/{name}")
 def embeddings_named_endpoint(name: str, req: EmbeddingsRequest, request: Request):
+    """Genera embeddings usando un perfil nombrado de configuración."""
     cfg = request.app.state.config
     embeddings_cfg = {e.get("name"): e for e in cfg.get("embeddings", [])}
     ecfg = embeddings_cfg.get(name)
@@ -304,11 +332,13 @@ def embeddings_named_endpoint(name: str, req: EmbeddingsRequest, request: Reques
 
 @router.get("/v1/embeddings/ready")
 def embeddings_ready():
+    """Disponibilidad de embeddings (stub)."""
     return JSONResponse({"ready": True, "mode": "stub", "dimensions_default": 256})
 
 
 @router.get("/v1/embeddings/{name}/ready")
 def embeddings_named_ready(name: str, request: Request):
+    """Disponibilidad de un perfil nombrado de embeddings (stub)."""
     cfg = request.app.state.config
     embeddings_cfg = {e.get("name"): e for e in cfg.get("embeddings", [])}
     ecfg = embeddings_cfg.get(name)
@@ -319,6 +349,7 @@ def embeddings_named_ready(name: str, request: Request):
 
 @router.get("/v1/embeddings/list")
 def embeddings_list(request: Request):
+    """Lista de perfiles de embeddings desde configuración."""
     cfg = request.app.state.config
     return JSONResponse({"items": cfg.get("embeddings", [])})
 
@@ -330,6 +361,7 @@ class VoiceTranscribeRequest(BaseModel):
 
 @router.post("/v1/voice/transcribe")
 def voice_transcribe_endpoint(req: VoiceTranscribeRequest):
+    """Transcribe audio a texto (stub)."""
     try:
         log.info("voice.transcribe", extra={"language": req.language or "auto", "has_audio": bool(req.audio.get("base64") or req.audio.get("url"))})
     except Exception:
@@ -345,6 +377,7 @@ class VoiceTTSRequest(BaseModel):
 
 @router.post("/v1/voice/tts")
 def voice_tts_endpoint(req: VoiceTTSRequest):
+    """Convierte texto a audio (stub)."""
     try:
         log.info("voice.tts", extra={"len_text": len(req.text or ""), "voice": req.voice or "default", "format": req.format or "mp3"})
     except Exception:
@@ -354,6 +387,7 @@ def voice_tts_endpoint(req: VoiceTTSRequest):
 
 @router.get("/v1/voice/ready")
 def voice_ready():
+    """Disponibilidad de servicio de voz (stub)."""
     return JSONResponse({"ready": True, "mode": "stub"})
 
 
@@ -365,6 +399,7 @@ class ResearchSearchRequest(BaseModel):
 
 @router.post("/v1/research/search")
 def research_search_endpoint(req: ResearchSearchRequest):
+    """Búsqueda web simple (stub)."""
     try:
         log.info("research.search", extra={"query_len": len(req.query or ""), "top_k": int(req.top_k or 5), "site": req.site or "*"})
     except Exception:
@@ -448,6 +483,7 @@ class HousekeeperSwitchRequest(BaseModel):
 
 @router.post("/admin/housekeeper/strategy")
 def housekeeper_switch(req: HousekeeperSwitchRequest, request: Request):
+    """Cambia la estrategia activa del housekeeper y reinicia su hilo."""
     cfg = request.app.state.config
     hk_cfg = cfg.get("housekeeper", {}) or {}
     strategies = hk_cfg.get("strategies", {}) or {}
@@ -477,6 +513,7 @@ def housekeeper_switch(req: HousekeeperSwitchRequest, request: Request):
 
 @router.get("/admin/housekeeper/policy")
 def housekeeper_policy(request: Request):
+    """Devuelve la política activa del housekeeper (estrategia + runtime)."""
     pol = getattr(request.app.state, 'housekeeper_policy', {})
     name = getattr(request.app.state, 'housekeeper_strategy', None)
     return JSONResponse({"strategy": name, "policy": pol})
@@ -488,6 +525,7 @@ class HousekeeperActionsRequest(BaseModel):
 
 @router.post("/admin/housekeeper/actions")
 def housekeeper_actions(req: HousekeeperActionsRequest, request: Request):
+    """Activa/desactiva acciones del housekeeper en caliente (`actions_enabled`)."""
     # Toggle actions_enabled at runtime; persists in in-memory policy
     cfg = request.app.state.config
     hk_cfg = cfg.get("housekeeper", {}) or {}
@@ -509,11 +547,13 @@ def housekeeper_actions(req: HousekeeperActionsRequest, request: Request):
 
 @router.get("/v1/research/ready")
 def research_ready():
+    """Disponibilidad de servicio de investigación (stub)."""
     return JSONResponse({"ready": True, "mode": "stub"})
 
 
 @router.post("/v1/completions")
 def completions(req: CompletionRequest, request: Request, x_tenant_id: Optional[str] = Header(default=None)):
+    """Compatibilidad OpenAI Completions: ejecución no-stream y stream SSE."""
     registry, conc, cfg = get_resources(request)
     try:
         tenant = require_tenant(x_tenant_id)
@@ -566,6 +606,11 @@ def completions(req: CompletionRequest, request: Request, x_tenant_id: Optional[
 
 @router.post("/v1/chat/completions")
 def chat_completions(req: ChatRequest, request: Request, x_tenant_id: Optional[str] = Header(default=None)):
+    """Compatibilidad OpenAI Chat Completions.
+
+    Soporta tool_choice para `memory.search` y ejecución cerrada opcional
+    vía `server_tools_execute`.
+    """
     registry, conc, cfg = get_resources(request)
     try:
         tenant = require_tenant(x_tenant_id)
@@ -722,6 +767,7 @@ class MemorySearchRequest(BaseModel):
 
 @router.post("/v1/memory/search")
 def memory_search(req: MemorySearchRequest, request: Request, x_tenant_id: Optional[str] = Header(default=None)):
+    """Busca en memoria semántica (stub/cliente)."""
     try:
         tenant = require_tenant(x_tenant_id)
     except ValueError as e:

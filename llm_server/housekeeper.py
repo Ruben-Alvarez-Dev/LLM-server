@@ -1,4 +1,13 @@
 from __future__ import annotations
+"""Rutinas de housekeeping para RAM/SSD.
+
+Incluye:
+- Muestreo de RAM y SSD (libre/total, presión, RSS del proceso y descendientes).
+- Cálculo de beacons de salud (RAM/SSD) para logs y `/info`.
+- Planificación y ejecución opcional de soft-eviction por tick (detrás de `actions_enabled`).
+
+Las docstrings siguen estilo Google para facilitar la generación automática de documentación.
+"""
 
 import os
 import threading
@@ -14,6 +23,11 @@ import shutil
 
 
 def _mem_stats() -> Dict[str, float]:
+    """Obtiene métricas de memoria del sistema.
+
+    Returns:
+        Dict[str, float]: `free_gb`, `total_gb`, `used_gb`, `pressure` (0..1).
+    """
     total = 0.0
     avail = 0.0
     try:
@@ -35,6 +49,14 @@ def _mem_stats() -> Dict[str, float]:
 
 
 def _disk_stats(path: str) -> Dict[str, float]:
+    """Calcula métricas del disco para `path`.
+
+    Args:
+        path (str): Ruta base para consultar `disk_usage`.
+
+    Returns:
+        Dict[str, float]: `free_gb`, `total_gb`, `pressure` (0..1).
+    """
     try:
         usage = shutil.disk_usage(path)
         total = float(usage.total)
@@ -52,6 +74,16 @@ def _disk_stats(path: str) -> Dict[str, float]:
 
 
 def _beacon_ram(headroom_gb: float) -> str:
+    """Beacon de salud para RAM basado en `headroom_gb`.
+
+    Umbrales: critical (≤0), hot (≤2), warn (≤6), ok (>6).
+
+    Args:
+        headroom_gb (float): Margen libre tras reservar `free_reserve`.
+
+    Returns:
+        str: Uno de `ok|warn|hot|critical`.
+    """
     try:
         h = float(headroom_gb)
     except Exception:
@@ -66,6 +98,17 @@ def _beacon_ram(headroom_gb: float) -> str:
 
 
 def _beacon_ssd(pressure: float, free_gb: float, soft_pct: float, hard_pct: float) -> str:
+    """Beacon de salud para SSD basado en presión y libres.
+
+    Args:
+        pressure (float): Ratio de ocupación (0..1).
+        free_gb (float): Espacio libre en GB (guardas para críticos bajos).
+        soft_pct (float): Umbral blando de ocupación.
+        hard_pct (float): Umbral duro de ocupación.
+
+    Returns:
+        str: Uno de `ok|warn|hot|critical`.
+    """
     try:
         p = float(pressure)
         f = float(free_gb)
@@ -83,6 +126,14 @@ def _beacon_ssd(pressure: float, free_gb: float, soft_pct: float, hard_pct: floa
 
 
 def _list_files_by_oldest(paths: List[str]) -> List[Tuple[str, int, float]]:
+    """Lista archivos de `paths` ordenados por antigüedad ascendente.
+
+    Args:
+        paths (List[str]): Rutas base a recorrer.
+
+    Returns:
+        List[Tuple[str,int,float]]: Tuplas (path, size_bytes, mtime).
+    """
     out: List[Tuple[str, int, float]] = []
     import os
     from pathlib import Path
@@ -108,6 +159,15 @@ def _list_files_by_oldest(paths: List[str]) -> List[Tuple[str, int, float]]:
 
 
 def _plan_ssd_eviction(paths: List[str], target_bytes: int) -> Tuple[List[str], int]:
+    """Planifica una lista de ficheros a eliminar (por LRU) hasta `target_bytes`.
+
+    Args:
+        paths (List[str]): Directorios candidatos (escaneados recursivamente).
+        target_bytes (int): Presupuesto de bytes a liberar.
+
+    Returns:
+        Tuple[List[str], int]: (lista de paths seleccionados, bytes estimados).
+    """
     if target_bytes <= 0:
         return [], 0
     files = _list_files_by_oldest(paths)
@@ -122,6 +182,16 @@ def _plan_ssd_eviction(paths: List[str], target_bytes: int) -> Tuple[List[str], 
 
 
 class Housekeeper:
+    """Hilo de housekeeping periódico.
+
+    Recolecta métricas, calcula beacons y, si la política lo permite,
+    ejecuta soft-eviction por tick.
+
+    Attributes:
+        app: Referencia a la app FastAPI para leer config/estado.
+        interval_s (float): Intervalo entre ticks.
+        disk_path (str): Ruta base para medir presión de SSD.
+    """
     def __init__(self, app, interval_s: float, disk_path: str) -> None:
         self.app = app
         self.interval_s = max(1.0, float(interval_s))
@@ -130,6 +200,7 @@ class Housekeeper:
         self._thread: Optional[threading.Thread] = None
 
     def start(self) -> None:
+        """Arranca el hilo de housekeeping (idempotente)."""
         if self._thread and self._thread.is_alive():
             return
         t = threading.Thread(target=self._run, name="housekeeper", daemon=True)
@@ -137,6 +208,7 @@ class Housekeeper:
         t.start()
 
     def stop(self) -> None:
+        """Detiene el hilo de housekeeping con un join corto."""
         self._stop.set()
         if self._thread and self._thread.is_alive():
             try:
@@ -145,6 +217,7 @@ class Housekeeper:
                 pass
 
     def _run(self) -> None:
+        """Bucle principal del housekeeper (bloqueante en su hilo)."""
         from .metrics import metrics
         from .logging_utils import get_logger
         log = get_logger("llm-server")

@@ -1,22 +1,21 @@
-LLM-server 0.1.0 — Housekeeper Beacons & SSD Soft-Eviction (prep)
+LLM-server 0.1.0 — Beacons y Soft‑Eviction (preparado)
 
-Highlights
-- RAM/SSD beacons (warn/hot/critical) derived from live metrics.
-- Beacons exposed in `/info.housekeeper.beacons` and logged on each `housekeeper.tick`.
-- `ram_headroom_gb` added to docs and used to drive RAM beacon logic.
-- SSD soft-eviction is implemented per tick behind `actions_enabled` (disabled by default).
-- Eviction planning is logged; execution respects per-tick cap and candidate dirs.
+Lo nuevo
+- Beacons RAM/SSD (ok/warn/hot/critical) derivados de métricas en vivo.
+- Beacons expuestos en `/info.housekeeper.beacons` y en cada `housekeeper.tick` de logs.
+- `ram_headroom_gb` documentado y usado para el beacon de RAM.
+- Soft‑eviction de SSD preparado por tick, detrás de `actions_enabled` (desactivado por defecto).
+- Planificación de evicción en logs; ejecución respeta un límite por tick y directorios candidatos.
 
-Details
-- RAM beacon thresholds: warn ≤ 6 GB, hot ≤ 2 GB, critical ≤ 0 GB; else ok.
-- SSD beacon thresholds: warn ≥ soft watermark, hot ≥ hard watermark, critical when very low free space (≤ 2 GB) or extreme pressure.
-- `/info` now returns the active strategy, watermarks, actions flag, beacons, and a live snapshot (when available).
-- Candidate eviction directories default to `logs/`, `runtime/agents/`, and `{models_root}/_cache|cache`; configurable via `ssd.evict_dirs`.
-- Per-tick eviction target is limited by `ssd.max_evict_per_tick_gb` (default 1 GB) and aims to return below the soft watermark.
+Detalles
+- Umbrales RAM: warn ≤ 6 GB, hot ≤ 2 GB, critical ≤ 0 GB; si no, ok.
+- Umbrales SSD: warn ≥ soft watermark, hot ≥ hard watermark, critical con libre muy bajo (≤ 2 GB) o presión extrema.
+- `/info` incluye estrategia activa, watermarks, `actions_enabled`, beacons y snapshot en vivo (si existe).
+- Directorios candidatos por defecto: `logs/`, `runtime/agents/` y caches bajo `{models_root}` (`_cache` y `cache`). `ssd.evict_dirs` añade rutas y se fusiona con los defaults.
+- Límite de evicción por tick controlado por `ssd.max_evict_per_tick_gb`.
 
-Testing
-- Added test `tests/test_housekeeper_beacons.py` to validate `/info.housekeeper.beacons` presence and shape.
+Pruebas
+- Cobertura para beacons en `/info`, snapshot, fallback sin HK, planificación y ejecución de evicción, y métricas del HK.
 
-Compatibility
-- No breaking API changes. New fields added under `/info.housekeeper`.
-
+Compatibilidad
+- Sin cambios incompatibles. Campos nuevos bajo `/info.housekeeper`.

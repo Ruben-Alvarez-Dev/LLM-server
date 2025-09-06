@@ -1,3 +1,12 @@
+"""Inicialización de la aplicación y middleware.
+
+Provee:
+- `create_app()`: construye la app FastAPI con endpoints, métricas y HK.
+- Middleware de contexto de petición: IDs, logs estructurados y rate limiting.
+
+Docstrings en estilo Google para facilitar la generación de documentación.
+"""
+
 from typing import Any, Dict
 
 try:
@@ -16,6 +25,13 @@ from .housekeeper import Housekeeper
 
 
 class _RateLimiter:
+    """Token bucket simple por cliente IP.
+
+    Args:
+        rps (float): Tokens por segundo (media permitida).
+        burst (int): Ráfaga máxima acumulable.
+    """
+
     def __init__(self, rps: float, burst: int) -> None:
         self.rps = max(0.0, float(rps))
         self.burst = max(1, int(burst))
@@ -23,6 +39,15 @@ class _RateLimiter:
         self._buckets: dict[str, tuple[float, float]] = {}  # key -> (tokens, last_ts)
 
     def allow(self, key: str, now: float) -> bool:
+        """Consume 1 token y devuelve permiso si hay saldo.
+
+        Args:
+            key (str): Identificador del cliente (e.g., IP).
+            now (float): Timestamp actual.
+
+        Returns:
+            bool: True si se permite la solicitud, False si se limita.
+        """
         if self.rps <= 0:
             return True
         with self._lock:
@@ -43,6 +68,11 @@ except Exception:
 
 
 def create_app() -> Any:
+    """Crea e inicializa la aplicación.
+
+    Returns:
+        Any: Instancia de FastAPI (o StubApp en entornos sin FastAPI).
+    """
     cfg: Dict[str, Any] = build_effective_config()
     if FastAPI is None:
         # Minimal stub app interface for environments without FastAPI
