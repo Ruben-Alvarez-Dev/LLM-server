@@ -25,7 +25,11 @@ Status
 - [x] Implement APIs (chat/completions, streaming)
 - [x] Messaging layer base (Redpanda+NATS, schemas, scripts, SDK)
 - [ ] Wire memory integration stubs
-- [ ] Add ops/telemetry
+- [x] Add ops/telemetry
+- [x] Discovery endpoints (/info, /v1/tools, /schemas)
+- [x] MCP tools parity with HTTP schemas
+- [x] Disable multi-tenant for this release
+- [x] Add profile-agnostic Vision endpoint (HTTP+MCP)
 - [ ] Tests + validation gates
 - [ ] Tools & Compatibility (Ch.08)
 - [ ] Agent Graph NL→DSL (Ch.09)
