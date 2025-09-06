@@ -8,6 +8,8 @@ context:
     - "docs/context/"
     - "configs/"
     - "runtime/current_profile"
+    - "Makefile"
+    - "tools/"
 
 # Exclude unnecessary files
 exclude:
@@ -21,3 +23,7 @@ rules:
   - Always keep /docs/context and configs/* indexed for reference.
   - Use docs/context/manifest.json as the source of truth for key files.
   - Respect runtime/current_profile as the single active default profile.
+  - Communication: chat in Spanish; code identifiers, comments, technical docs and commit messages in English.
+  - Git: single branch 'main'; use English commit messages; prefer organic, meaningful commits.
+  - Git author: if committing, set author to "Ruben-Alvarez-Dev <ruben.alvarez.dev@gmail.com>" (project policy).
+  - ATLAS (if present): treat as black box; document only public interfaces; use 'atlas_' prefix for public names.
