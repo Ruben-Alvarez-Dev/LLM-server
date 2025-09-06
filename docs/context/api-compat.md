@@ -40,6 +40,8 @@ MCP Support
   - `embeddings.generate` — OpenAI-like embeddings output.
   - `voice.transcribe` / `voice.tts` — mirror HTTP schemas.
   - `research.search` — mirror HTTP schema.
+  - `agents.plan` — NL→DSL planning (parity with HTTP), persists current plan optionally.
+  - `agents.current` — returns current agent-graph DSL if present.
 - Usage: `make mcp.run` starts the MCP server on stdio for compatible clients.
 
 Tenant Model

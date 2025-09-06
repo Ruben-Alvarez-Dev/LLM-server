@@ -203,6 +203,48 @@ def tool_list() -> List[Dict[str, Any]]:
                 "additionalProperties": True
             }
         },
+        {
+            "name": "agents.plan",
+            "description": "Compile NL hints to agent-graph DSL and optionally persist",
+            "inputSchema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "agents.plan.input",
+                "type": "object",
+                "properties": {
+                    "nl": {"type": "string"},
+                    "hints": {"type": "object"},
+                    "save": {"type": "boolean", "default": True}
+                },
+                "additionalProperties": False
+            },
+            "outputSchema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "agents.plan.output",
+                "type": "object",
+                "properties": {
+                    "dsl": {"type": "object"},
+                    "validated": {"type": "boolean"},
+                    "issues": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["dsl","validated"],
+                "additionalProperties": True
+            }
+        },
+        {
+            "name": "agents.current",
+            "description": "Return current agent-graph DSL if present",
+            "inputSchema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "agents.current.input",
+                "type": "object",
+                "additionalProperties": False
+            },
+            "outputSchema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "agents.current.output",
+                "type": "object"
+            }
+        },
     ]
 
 
@@ -234,4 +276,10 @@ def get_schema_by_name(name: str) -> Dict[str, Any]:
         return [t for t in tool_list() if t["name"] == "research.search"][0]["inputSchema"]
     if name == "research.search.output":
         return [t for t in tool_list() if t["name"] == "research.search"][0]["outputSchema"]
+    if name == "agents.plan":
+        return [t for t in tool_list() if t["name"] == "agents.plan"][0]["inputSchema"]
+    if name == "agents.plan.output":
+        return [t for t in tool_list() if t["name"] == "agents.plan"][0]["outputSchema"]
+    if name == "agents.current.output":
+        return [t for t in tool_list() if t["name"] == "agents.current"][0]["outputSchema"]
     raise KeyError(name)

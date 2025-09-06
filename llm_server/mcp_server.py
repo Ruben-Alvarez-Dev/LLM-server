@@ -13,6 +13,7 @@ from .embeddings import embed_texts
 from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
 from .logging_utils import get_logger
+from .agent_planner import compile_nl_to_dsl, validate_graph, save_current_plan
 
 
 def _write(msg: Dict[str, Any]) -> None:
@@ -89,6 +90,31 @@ def main() -> int:
             elif name == "research.search":
                 out = web_search(query=args.get("query",""), top_k=int(args.get("top_k") or 5), site=args.get("site"))
                 _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": json.dumps(out)}]}})
+            elif name == "agents.plan":
+                nl = args.get("nl") or ""
+                hints = args.get("hints") or {}
+                save = bool(args.get("save", True))
+                dsl = compile_nl_to_dsl(nl, hints)
+                val = validate_graph(dsl)
+                if save and val.get("ok"):
+                    try:
+                        from .config_loader import ROOT
+                        out_dir = (ROOT / "runtime" / "agents")
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        save_current_plan(dsl, str(out_dir / "current.yaml"))
+                    except Exception:
+                        pass
+                _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": json.dumps({"dsl": dsl, "validated": bool(val.get("ok")), "issues": val.get("issues", [])})}]}})
+            elif name == "agents.current":
+                try:
+                    from .config_loader import ROOT
+                    p = ROOT / "runtime" / "agents" / "current.yaml"
+                    if not p.exists():
+                        _write({"jsonrpc":"2.0","id": mid, "error": {"code": -32004, "message": "no current plan"}})
+                    else:
+                        _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": p.read_text()}]}})
+                except Exception as e:
+                    _write({"jsonrpc":"2.0","id": mid, "error": {"code": -32005, "message": f"failed to read current plan: {e}"}})
             else:
                 _write({"jsonrpc":"2.0","id": mid, "error": {"code": -32601, "message": "Unknown tool"}})
         else:
