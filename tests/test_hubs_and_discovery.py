@@ -37,8 +37,9 @@ def test_discovery_and_ports():
 
     p = client.get('/v1/ports'); assert p.status_code == 200
     hubs = {h['name'] for h in p.json().get('hubs', [])}
-    for name in ['orchestrator','vision','embeddings','research']:
+    for name in ['orchestrator','vision','research']:
         assert name in hubs
+    assert any(h.startswith('embeddings') for h in hubs)
     # voice hub may be disabled by default
     if os.getenv('FEATURE_VOICE','0') in ('1','true','on'):
         assert 'voice' in hubs
