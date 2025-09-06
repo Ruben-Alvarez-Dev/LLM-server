@@ -23,8 +23,9 @@ def test_housekeeper_snapshot_and_endpoints_present():
         from llm_server.app import create_app
     except Exception:
         return
-    # Tick rápido
+    # Tick rápido y aseguramos HK habilitado
     os.environ['HOUSEKEEPER_INTERVAL_S'] = '0.05'
+    os.environ['HOUSEKEEPER_ENABLED'] = '1'
     app = create_app()
     if not hasattr(app, 'state'):
         return
@@ -50,6 +51,7 @@ def test_housekeeper_strategy_switch_and_policy():
     except Exception:
         return
     os.environ['HOUSEKEEPER_INTERVAL_S'] = '0.05'
+    os.environ['HOUSEKEEPER_ENABLED'] = '1'
     app = create_app()
     if not hasattr(app, 'state'):
         return

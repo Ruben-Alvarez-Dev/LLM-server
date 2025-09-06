@@ -14,7 +14,8 @@
       "ssd": {
         "path": ".",
         "soft_pct": 0.75,
-        "hard_pct": 0.85
+        "hard_pct": 0.85,
+        "max_evict_per_tick_gb": 1.0
       },
       "backpressure": {
         "enable_soft": true,
@@ -34,7 +35,8 @@
       "ssd": {
         "path": ".",
         "soft_pct": 0.80,
-        "hard_pct": 0.92
+        "hard_pct": 0.92,
+        "max_evict_per_tick_gb": 2.0
       },
       "backpressure": {
         "enable_soft": false,
@@ -54,7 +56,8 @@
       "ssd": {
         "path": ".",
         "soft_pct": 0.70,
-        "hard_pct": 0.82
+        "hard_pct": 0.82,
+        "max_evict_per_tick_gb": 0.5
       },
       "backpressure": {
         "enable_soft": true,
