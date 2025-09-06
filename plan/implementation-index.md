@@ -24,7 +24,7 @@ Status
   (runner via llama.cpp CLI; windows/timeout enforced)
 - [x] Implement APIs (chat/completions, streaming)
 - [x] Messaging layer base (Redpanda+NATS, schemas, scripts, SDK)
-- [ ] Wire memory integration stubs
+ - [x] Wire memory integration stubs
 - [x] Add ops/telemetry
 - [x] Discovery endpoints (/info, /v1/tools, /schemas)
 - [x] MCP tools parity with HTTP schemas
@@ -33,6 +33,10 @@ Status
 - [ ] Tests + validation gates
 - [ ] Tools & Compatibility (Ch.08)
 - [ ] Agent Graph NL→DSL (Ch.09)
+
+Backlog (Next)
+- [ ] Embeddings config validation and docs (multi-instance) — DONE
+- [ ] Memory management (multi-level RAM/SSD): design + housekeeper stub (metrics only)
 
 Checklist Index
 - See chapter files for concrete checkpoints and acceptance criteria.

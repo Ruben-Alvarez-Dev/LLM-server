@@ -29,6 +29,9 @@
     { "path": "tools/validate.py", "priority": 6 },
     { "path": "Makefile", "priority": 5 },
     { "path": "runtime/current_profile", "priority": 5 },
-    { "path": "codex.md", "priority": 5 }
+    { "path": "codex.md", "priority": 5 },
+    { "path": "docs/context/embeddings.md", "priority": 7 },
+    { "path": "docs/context/memory-management.md", "priority": 7 },
+    { "path": "docs/context/schemas/embeddings_profile.schema.json", "priority": 6 }
   ]
 }
