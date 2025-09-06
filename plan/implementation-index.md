@@ -12,6 +12,8 @@ Chapters
 - Chapter 05 — Memory Integration: client stubs, directed retrieval hooks, caching.
 - Chapter 06 — Ops & Telemetry: structured logs, request IDs, rate limits, backpressure.
 - Chapter 07 — QA & Validation: unit/integration smoke, RAM validation checks, profile validation.
+- Chapter 08 — Tools & Compatibility: OpenAI function-calling, Cline Plan/Act, Continue modes, Copilot FIM.
+- Chapter 09 — Agent Graph (NL → DSL): definición de agentes/circuitos por lenguaje natural y compilación a DSL.
 
 Status
 - [x] Initialize context pack, configs, schemas, validator, profile, Makefile
@@ -22,7 +24,8 @@ Status
 - [ ] Wire memory integration stubs
 - [ ] Add ops/telemetry
 - [ ] Tests + validation gates
+- [ ] Tools & Compatibility (Ch.08)
+- [ ] Agent Graph NL→DSL (Ch.09)
 
 Checklist Index
 - See chapter files for concrete checkpoints and acceptance criteria.
-

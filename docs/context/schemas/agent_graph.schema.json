@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent_graph.schema.json",
+  "type": "object",
+  "required": ["agents", "edges", "entry"],
+  "additionalProperties": false,
+  "properties": {
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "role"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "role": {"type": "string"},
+          "model": {"type": "string"},
+          "window": {"type": "integer", "minimum": 1},
+          "concurrency": {"type": "integer", "minimum": 0},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "when": {"type": "string"}
+        }
+      }
+    },
+    "entry": {"type": "string"},
+    "exit": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "escalate_to_32b_if": {"type": "array", "items": {"type": "string"}},
+        "verify_steps": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
