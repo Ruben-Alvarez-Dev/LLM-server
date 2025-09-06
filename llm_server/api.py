@@ -14,7 +14,7 @@ from .tenancy import require_tenant
 from .messaging_stub import KafkaProducerStub
 from .memory_client import MemoryClient
 from .schemas import tool_list, get_schema_by_name
-from .vision import analyze as vision_analyze
+from .vision import analyze as vision_analyze, readiness as vision_readiness
 from .embeddings import embed_texts
 from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
@@ -105,10 +105,14 @@ def info(request: Request):
             "completions": "/v1/completions",
             "memory_search": "/v1/memory/search",
             "vision_analyze": "/v1/vision/analyze",
+            "vision_ready": "/v1/vision/ready",
             "embeddings": "/v1/embeddings",
+            "embeddings_ready": "/v1/embeddings/ready",
             "voice_transcribe": "/v1/voice/transcribe",
             "voice_tts": "/v1/voice/tts",
+            "voice_ready": "/v1/voice/ready",
             "research_search": "/v1/research/search",
+            "research_ready": "/v1/research/ready",
             "tools": "/v1/tools",
             "schemas": "/schemas/{name}.json",
             "ports": "/v1/ports",
@@ -188,6 +192,11 @@ def vision_analyze_endpoint(req: VisionAnalyzeRequest, request: Request):
     return JSONResponse(out)
 
 
+@router.get("/v1/vision/ready")
+def vision_ready():
+    return JSONResponse(vision_readiness())
+
+
 class EmbeddingsRequest(BaseModel):
     model: Optional[str] = None
     input: Any
@@ -213,6 +222,11 @@ def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
     else:
         data_items = [{"object": "embedding", "index": i, "embedding": v} for i, v in enumerate(vecs)]
     return JSONResponse({"object": "list", "data": data_items, "model": req.model or "stub-embeddings", "usage": {"prompt_tokens": 0, "total_tokens": 0}})
+
+
+@router.get("/v1/embeddings/ready")
+def embeddings_ready():
+    return JSONResponse({"ready": True, "mode": "stub", "dimensions_default": 256})
 
 
 class VoiceTranscribeRequest(BaseModel):
@@ -244,6 +258,11 @@ def voice_tts_endpoint(req: VoiceTTSRequest):
     return JSONResponse(voice_tts(text=req.text, voice=req.voice, format=req.format or "mp3"))
 
 
+@router.get("/v1/voice/ready")
+def voice_ready():
+    return JSONResponse({"ready": True, "mode": "stub"})
+
+
 class ResearchSearchRequest(BaseModel):
     query: str
     top_k: Optional[int] = 5
@@ -257,6 +276,11 @@ def research_search_endpoint(req: ResearchSearchRequest):
     except Exception:
         pass
     return JSONResponse(web_search(req.query, top_k=int(req.top_k or 5), site=req.site))
+
+
+@router.get("/v1/research/ready")
+def research_ready():
+    return JSONResponse({"ready": True, "mode": "stub"})
 
 
 @router.post("/v1/completions")

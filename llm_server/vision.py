@@ -159,3 +159,31 @@ def analyze(images: List[Dict[str, Any]], prompt: Optional[str] = None, tasks: O
         insights.append(vl_text)
 
     return {"ocr": out_ocr, "insights": insights, "issues": issues, "raw": {"tasks": tasks or []}}
+
+
+def readiness() -> Dict[str, Any]:
+    """Report if VL backend is available and/or OCR fallback is possible."""
+    cli = _llama_cli_path()
+    cfg = build_effective_config()
+    vcfg = cfg.get("vision", {}) or {}
+    model_name = vcfg.get("model") or "qwen2-vl-7b-instruct-q4_k_m"
+    cat = CATALOG.get(model_name, {})
+    file = cat.get("file")
+    mmproj = cat.get("mmproj")
+    model_path = Path(cfg["models_root"]) / file if file else None
+    mmproj_path = Path(cfg["models_root"]) / mmproj if mmproj else None
+    vl_ready = bool(cli and model_path and model_path.exists() and mmproj_path and mmproj_path.exists())
+    Image, pytesseract = _try_import_ocr()
+    ocr_ready = bool(Image is not None and pytesseract is not None)
+    mode = "vl" if vl_ready else ("ocr" if ocr_ready else "none")
+    return {
+        "ready": bool(vl_ready or ocr_ready),
+        "mode": mode,
+        "details": {
+            "llama_cli": bool(cli),
+            "model_present": bool(model_path and model_path.exists()),
+            "mmproj_present": bool(mmproj_path and mmproj_path.exists()),
+            "ocr_libs": ocr_ready,
+        },
+        "model": model_name,
+    }
