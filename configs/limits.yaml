@@ -1,0 +1,19 @@
+{
+  "windows_max": {
+    "deepseek-r1-qwen-32b-q4_k_m": 65536,
+    "qwen2.5-14b-instruct-q4_k_m": 24576,
+    "phi-4-mini-instruct": 16384
+  },
+  "concurrency": {
+    "router": 1,
+    "architect": 1,
+    "planner": 1,
+    "analysis": 1,
+    "distillation": 1,
+    "coder": 2,
+    "verifiers": 3,
+    "debugger": 1,
+    "finalizer": 1
+  },
+  "step_cutoff_seconds": 12
+}

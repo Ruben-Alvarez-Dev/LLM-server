@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "files": [
+    { "path": "docs/context/overview.md", "priority": 10 },
+    { "path": "docs/context/llm-server.md", "priority": 9 },
+    { "path": "docs/context/memory-server.md", "priority": 9 },
+    { "path": "docs/context/limits.md", "priority": 8 },
+    { "path": "docs/context/playbooks/bootstrap.md", "priority": 7 },
+    { "path": "configs/models.yaml", "priority": 7 },
+    { "path": "configs/limits.yaml", "priority": 7 },
+    { "path": "configs/roles/README.md", "priority": 6 },
+    { "path": "configs/base_profiles/README.md", "priority": 6 },
+    { "path": "configs/custom_profiles/README.md", "priority": 6 },
+    { "path": "configs/custom_profiles/dev-default.yaml", "priority": 6 },
+    { "path": "docs/context/schemas/models.schema.json", "priority": 6 },
+    { "path": "docs/context/schemas/limits.schema.json", "priority": 6 },
+    { "path": "docs/context/schemas/profile.schema.json", "priority": 6 },
+    { "path": "tools/validate.py", "priority": 6 },
+    { "path": "Makefile", "priority": 5 },
+    { "path": "runtime/current_profile", "priority": 5 },
+    { "path": "codex.md", "priority": 5 }
+  ]
+}

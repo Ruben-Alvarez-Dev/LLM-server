@@ -1,0 +1,32 @@
+{
+  "profile_name": "dev-default",
+  "selected_models": [
+    "deepseek-r1-qwen-32b-q4_k_m",
+    "qwen2.5-14b-instruct-q4_k_m",
+    "phi-4-mini-instruct"
+  ],
+  "ports": {
+    "orchestrator": 8080,
+    "llm_server": 8081,
+    "memory_server": 8082
+  },
+  "processes": {
+    "orchestrator": "orchestrator",
+    "llm_server": "llm-server",
+    "memory_server": "memory-server"
+  },
+  "concurrency": {
+    "router": 1,
+    "architect": 1,
+    "planner": 1,
+    "analysis": 1,
+    "distillation": 1,
+    "coder": 2,
+    "verifiers": 3,
+    "debugger": 1,
+    "finalizer": 1
+  },
+  "ram_budget_gb": 70,
+  "memory_server_ram_gb": 10,
+  "notes": "Base profiles are read-only; edit custom only"
+}

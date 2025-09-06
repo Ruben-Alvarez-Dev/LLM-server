@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "limits.schema.json",
+  "type": "object",
+  "required": ["windows_max", "concurrency", "step_cutoff_seconds"],
+  "additionalProperties": false,
+  "properties": {
+    "windows_max": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 1 }
+    },
+    "concurrency": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "step_cutoff_seconds": { "type": "integer", "minimum": 1 }
+  }
+}

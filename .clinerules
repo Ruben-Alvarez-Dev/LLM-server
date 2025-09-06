@@ -1,0 +1,23 @@
+# Cline Rules for AI-server
+
+version: 1
+
+# Fixed context paths that must always be available
+context:
+  include:
+    - "docs/context/"
+    - "configs/"
+    - "runtime/current_profile"
+
+# Exclude unnecessary files
+exclude:
+  - "node_modules/"
+  - ".git/"
+  - "*.log"
+  - "*.tmp"
+
+# Behavior notes
+rules:
+  - Always keep /docs/context and configs/* indexed for reference.
+  - Use docs/context/manifest.json as the source of truth for key files.
+  - Respect runtime/current_profile as the single active default profile.

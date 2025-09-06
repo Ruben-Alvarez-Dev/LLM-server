@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "name": "deepseek-r1-qwen-32b-q4_k_m",
+      "est_ram_gb": 20,
+      "context_max": 65536
+    },
+    {
+      "name": "qwen2.5-14b-instruct-q4_k_m",
+      "est_ram_gb": 9,
+      "context_max": 32768
+    },
+    {
+      "name": "phi-4-mini-instruct",
+      "est_ram_gb": 5,
+      "context_max": 16384
+    }
+  ]
+}
