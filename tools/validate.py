@@ -58,6 +58,20 @@ def validate_limits(limits_data: dict):
         require(isinstance(k, str) and k, 'concurrency keys must be strings')
         require(isinstance(v, int) and v >= 0, f'concurrency[{k}] must be integer >= 0')
     require(isinstance(cut, int) and cut >= 1, 'limits.yaml: step_cutoff_seconds must be integer >= 1')
+
+    # Optional generation defaults
+    gen = limits_data.get('gen_defaults', {})
+    if gen:
+        require(isinstance(gen, dict), 'limits.yaml: gen_defaults must be an object')
+        for key in ['temperature', 'top_p', 'repeat_penalty']:
+            if key in gen:
+                require(isinstance(gen[key], (int, float)) and gen[key] >= 0, f'gen_defaults.{key} must be >= 0')
+        if 'top_p' in gen:
+            require(gen['top_p'] <= 1, 'gen_defaults.top_p must be <= 1')
+        for key in ['top_k', 'max_tokens', 'seed']:
+            if key in gen:
+                require(isinstance(gen[key], int) and gen[key] >= 0, f'gen_defaults.{key} must be integer >= 0')
+
     return wm, cc, cut
 
 def validate_profile(profile_data: dict, model_names: set):
@@ -139,4 +153,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-

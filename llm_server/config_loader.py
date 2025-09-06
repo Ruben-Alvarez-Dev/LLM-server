@@ -78,6 +78,30 @@ def build_effective_config() -> Dict[str, Any]:
     llm_port = env_override("PORT_LLM_SERVER", llm_port)
     mem_port = env_override("PORT_MEMORY_SERVER", mem_port)
 
+    gen_defaults = (limits_cfg.get("gen_defaults") or {}).copy()
+    # ENV overrides for quick tuning
+    def _envf(name: str, cast):
+        v = os.getenv(name)
+        if v is None:
+            return None
+        try:
+            return cast(v)
+        except Exception:
+            return None
+
+    for key, cast in [
+        ("temperature", float),
+        ("top_p", float),
+        ("top_k", int),
+        ("repeat_penalty", float),
+        ("max_tokens", int),
+        ("seed", int),
+    ]:
+        env_key = f"GEN_{key.upper()}"
+        val = _envf(env_key, cast)
+        if val is not None:
+            gen_defaults[key] = val
+
     cfg = {
         "profile_name": profile_name,
         "ports": {"orchestrator": orch, "llm_server": llm_port, "memory_server": mem_port},
@@ -87,10 +111,10 @@ def build_effective_config() -> Dict[str, Any]:
         "selected_models": profile.get("selected_models", []),
         "models": models_cfg.get("models", []),
         "limits": limits_cfg,
+        "gen_defaults": gen_defaults,
         # models root outside this repo (parent directory)
         "models_root": str((ROOT.parent / "models").resolve()),
         "processes": profile.get("processes", {}),
         "notes": profile.get("notes", ""),
     }
     return cfg
-

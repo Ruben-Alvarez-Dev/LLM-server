@@ -1,9 +1,17 @@
 import os
 import sys
 from .app import create_app
+from .bootstrap import ensure_llama_built
 
 
 def main() -> int:
+    # Ensure llama.cpp is available (clone+build if needed)
+    try:
+        llama_bin = ensure_llama_built()
+        print(f"llama.cpp ready: {llama_bin}")
+    except Exception as e:
+        print(f"Warning: llama.cpp bootstrap failed: {e}")
+
     app = create_app()
     # FastAPI available?
     if hasattr(app, "state"):
@@ -25,4 +33,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
