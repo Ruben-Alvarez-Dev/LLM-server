@@ -30,13 +30,13 @@ Status
 - [x] MCP tools parity with HTTP schemas
 - [x] Disable multi-tenant for this release
 - [x] Add profile-agnostic Vision endpoint (HTTP+MCP)
-- [ ] Tests + validation gates
-- [ ] Tools & Compatibility (Ch.08)
-- [ ] Agent Graph NL→DSL (Ch.09)
+- [x] Tests + validation gates (smoke, CI)
+- [x] Tools & Compatibility (Ch.08) — prep + optional closed-loop
+- [x] Agent Graph NL→DSL (Ch.09) — esqueleto mínimo (plan/current)
 
 Backlog (Next)
-- [ ] Embeddings config validation and docs (multi-instance) — DONE
-- [ ] Memory management (multi-level RAM/SSD): design + housekeeper stub (metrics only)
+- [x] Embeddings config validation and docs (multi-instance)
+- [x] Memory management (multi-level RAM/SSD): design + housekeeper stub (metrics only)
 
 Checklist Index
 - See chapter files for concrete checkpoints and acceptance criteria.
