@@ -29,18 +29,14 @@ messaging-down:
 
 .PHONY: api.smoke mcp.run
 api.smoke:
-	@. .venv/bin/activate; python - <<'PY'
-from fastapi.testclient import TestClient
-from llm_server.app import create_app
-app=create_app();
-if not hasattr(app,'state'): print('FastAPI not available'); raise SystemExit(1)
-client=TestClient(app)
-r=client.get('/v1/models'); print('models:', r.status_code, r.json())
-r=client.post('/v1/chat/completions', json={'model':'phi-4-mini-instruct','messages':[{'role':'user','content':'say hi'}]}); print('chat:', r.status_code)
-PY
+	@. .venv/bin/activate; python -c "from fastapi.testclient import TestClient; from llm_server.app import create_app; app=create_app(); import sys, json; print('fastapi', hasattr(app,'state')); client=TestClient(app); r=client.get('/v1/models'); print('models:', r.status_code, len(r.json().get('data',[]))); r=client.post('/v1/chat/completions', json={'model':'phi-4-mini-instruct','messages':[{'role':'user','content':'say hi'}]}); print('chat:', r.status_code)"
 
 mcp.run:
 	@. .venv/bin/activate; python -c "import llm_server.mcp_server as m; m.main()"
+
+.PHONY: test
+test:
+	@. .venv/bin/activate; pytest -q
 
 # llama.cpp setup and build (Metal on macOS)
 LLAMA_DIR=vendor/llama.cpp

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from .generation import generate_with_llama_cli, speculative_generate
 from .tenancy import require_tenant
 from .messaging_stub import KafkaProducerStub
+from .memory_client import MemoryClient
 
 
 class ChatMessage(BaseModel):
@@ -54,6 +55,7 @@ def get_resources(request: Request):
 
 router = APIRouter()
 producer = KafkaProducerStub()
+mem_client = MemoryClient()
 
 
 def _topic_namer(tenant: str, domain: str) -> str:
@@ -190,10 +192,33 @@ def chat_completions(req: ChatRequest, request: Request, x_tenant_id: Optional[s
         model = req.model
         cid = f"chatcmpl-{int(time.time()*1000)}"
         # initial role delta (optional per OpenAI spec)
-        yield f"data: {json.dumps({"id": cid, "object": "chat.completion.chunk", "created": created, "model": model, "choices":[{"index":0, "delta": {"role":"assistant"}, "finish_reason": None}]})}\n\n"
+        first_evt = {
+            "id": cid,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}],
+        }
+        yield f"data: {json.dumps(first_evt)}\n\n"
         for i in range(0, len(out), 64):
             delta = out[i:i+64]
             evt = {"id": cid, "object": "chat.completion.chunk", "created": created, "model": model, "choices":[{"index":0, "delta": {"content": delta}, "finish_reason": None}]}
             yield f"data: {json.dumps(evt)}\n\n"
         yield "data: [DONE]\n\n"
     return StreamingResponse(_gen_sse(), media_type="text/event-stream")
+
+
+class MemorySearchRequest(BaseModel):
+    query: str
+    k: int = 5
+    filters: Optional[Dict[str, Any]] = None
+
+
+@router.post("/v1/memory/search")
+def memory_search(req: MemorySearchRequest, request: Request, x_tenant_id: Optional[str] = Header(default=None)):
+    try:
+        tenant = require_tenant(x_tenant_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    out = mem_client.search(req.query, k=req.k, filters=req.filters)
+    return {"tenant_id": tenant, "results": out}
