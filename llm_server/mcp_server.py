@@ -12,6 +12,7 @@ from .vision import analyze as vision_analyze
 from .embeddings import embed_texts
 from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
+from .logging_utils import get_logger
 
 
 def _write(msg: Dict[str, Any]) -> None:
@@ -24,6 +25,7 @@ def main() -> int:
     registry = getattr(app, 'state', None) and app.state.registry
     conc = getattr(app, 'state', None) and app.state.concurrency
     mem_client = MemoryClient()
+    log = get_logger("llm-server.mcp")
 
     _write({"jsonrpc":"2.0","id":0,"result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"llm-server-mcp","version":"0.1.0"}}})
     for line in sys.stdin:
@@ -42,6 +44,10 @@ def main() -> int:
         elif method == "tools/call":
             name = params.get("name")
             args = params.get("arguments") or {}
+            try:
+                log.info("mcp.call", extra={"tool": name})
+            except Exception:
+                pass
             if name == "llm.chat":
                 from .generation import generate_with_llama_cli
                 model = args.get("model")
@@ -56,6 +62,10 @@ def main() -> int:
                 try:
                     results = mem_client.search(query, k=k, filters=filters)
                 except Exception as e:
+                    try:
+                        log.info("mcp.error", extra={"tool": name, "error": str(e)[:200]})
+                    except Exception:
+                        pass
                     _write({"jsonrpc":"2.0","id": mid, "error": {"code": -32000, "message": f"memory.search failed: {e}"}})
                 else:
                     _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": json.dumps({"results": results})}]}})

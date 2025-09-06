@@ -18,6 +18,7 @@ from .vision import analyze as vision_analyze
 from .embeddings import embed_texts
 from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
+from .logging_utils import get_logger
 
 
 class ChatMessage(BaseModel):
@@ -61,6 +62,7 @@ def get_resources(request: Request):
 router = APIRouter()
 producer = KafkaProducerStub()
 mem_client = MemoryClient()
+log = get_logger("llm-server")
 
 
 def _topic_namer(tenant: str, domain: str) -> str:
@@ -178,6 +180,10 @@ def vision_analyze_endpoint(req: VisionAnalyzeRequest, request: Request):
         }.items() if v is not None}
         for i in req.images
     ]
+    try:
+        log.info("vision.analyze", extra={"images": len(imgs), "ocr": req.ocr or "auto", "has_prompt": bool(req.prompt)})
+    except Exception:
+        pass
     out = vision_analyze(imgs, prompt=req.prompt, tasks=req.tasks, ocr_mode=req.ocr or "auto")
     return JSONResponse(out)
 
@@ -192,7 +198,12 @@ class EmbeddingsRequest(BaseModel):
 @router.post("/v1/embeddings")
 def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
     texts = req.input if isinstance(req.input, list) else [req.input]
-    vecs = embed_texts([str(t) for t in texts], dim=int(req.dimensions or 256))
+    dim = int(req.dimensions or 256)
+    try:
+        log.info("embeddings.generate", extra={"count": len(texts), "dim": dim, "format": req.encoding_format or "float"})
+    except Exception:
+        pass
+    vecs = embed_texts([str(t) for t in texts], dim=dim)
     if req.encoding_format == "base64":
         import base64, array
         data_items = []
@@ -211,6 +222,10 @@ class VoiceTranscribeRequest(BaseModel):
 
 @router.post("/v1/voice/transcribe")
 def voice_transcribe_endpoint(req: VoiceTranscribeRequest):
+    try:
+        log.info("voice.transcribe", extra={"language": req.language or "auto", "has_audio": bool(req.audio.get("base64") or req.audio.get("url"))})
+    except Exception:
+        pass
     return JSONResponse(voice_transcribe(audio_base64=req.audio.get("base64"), url=req.audio.get("url"), language=req.language))
 
 
@@ -222,6 +237,10 @@ class VoiceTTSRequest(BaseModel):
 
 @router.post("/v1/voice/tts")
 def voice_tts_endpoint(req: VoiceTTSRequest):
+    try:
+        log.info("voice.tts", extra={"len_text": len(req.text or ""), "voice": req.voice or "default", "format": req.format or "mp3"})
+    except Exception:
+        pass
     return JSONResponse(voice_tts(text=req.text, voice=req.voice, format=req.format or "mp3"))
 
 
@@ -233,6 +252,10 @@ class ResearchSearchRequest(BaseModel):
 
 @router.post("/v1/research/search")
 def research_search_endpoint(req: ResearchSearchRequest):
+    try:
+        log.info("research.search", extra={"query_len": len(req.query or ""), "top_k": int(req.top_k or 5), "site": req.site or "*"})
+    except Exception:
+        pass
     return JSONResponse(web_search(req.query, top_k=int(req.top_k or 5), site=req.site))
 
 
