@@ -17,6 +17,11 @@ Endpoints (HTTP)
 - POST /v1/voice/transcribe — ASR stub; returns structure with empty text unless backend present.
 - POST /v1/voice/tts — TTS stub; returns base64 placeholder.
 - POST /v1/research/search — Web/search stub; deterministic results.
+- GET /v1/vision/ready — readiness (vl/ocr/none) with details.
+- GET /v1/embeddings/ready — readiness stub.
+- GET /v1/voice/ready — readiness stub (voice hub may be disabled by default).
+- GET /v1/research/ready — readiness stub.
+- POST /admin/profile/switch { name } — switch active profile; hot‑reloads config/registry.
 
 Streaming (SSE)
 - Uses `text/event-stream` with `data: {chunk}` JSON lines and a final `data: [DONE]` line.
@@ -67,3 +72,23 @@ Examples
 
 Function Calling
 - Prep mode enabled: if `tool_choice={type:'function', function:{name:'memory.search'}}`, HTTP chat returns `tool_calls` with arguments and `finish_reason:'tool_calls'`. The client/orchestrator executes the tool (HTTP/MCP) and decides next step.
+- Closed‑loop (opcional): añade `server_tools_execute: true` (o `FC_CLOSED_LOOP=1`) para ejecutar `memory.search` en servidor y devolver un resumen directo.
+
+Examples (chat with memory.search)
+- Prep (cliente orquesta):
+  {
+    "model": "phi-4-mini-instruct",
+    "messages": [{"role":"user","content":"find X in memory"}],
+    "tool_choice": {"type":"function","function": {"name":"memory.search"}}
+  }
+- Closed‑loop (servidor ejecuta):
+  {
+    "model": "phi-4-mini-instruct",
+    "messages": [{"role":"user","content":"find X in memory"}],
+    "tool_choice": {"type":"function","function": {"name":"memory.search"}},
+    "server_tools_execute": true
+  }
+
+Admin & Limits
+- Rate limit básico: 429 configurable por env (`RATE_LIMIT_ENABLED`, `RATE_LIMIT_RPS`, `RATE_LIMIT_BURST`).
+- Voice hub: deshabilitado por defecto; activar con `FEATURE_VOICE=1` para que aparezca en `/info` y `/v1/ports`.
