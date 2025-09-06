@@ -43,3 +43,6 @@ Slots y Enfoques (referencia; cada perfil define su plantilla)
 Contratos
 - La orquesta expone un único HUB (entrada/salida) y el ruteo interno es asíncrono (mensajería). No hay endpoints públicos por agente.
 - Servicios externos a la orquesta (visión, voz, research, embeddings, etc.) sí exponen endpoints propios según el perfil.
+- Planificación NL→DSL mínima:
+  - `POST /v1/agents/plan` — entrada `{ nl?: string, hints?: object, save?: bool }` → `{ dsl, validated, issues }`. Guarda en `runtime/agents/current.yaml` si `save=true`.
+  - `GET /v1/agents/current` — devuelve el DSL actual si existe.

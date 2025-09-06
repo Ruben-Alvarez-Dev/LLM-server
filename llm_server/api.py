@@ -19,6 +19,7 @@ from .embeddings import embed_texts
 from .voice import transcribe as voice_transcribe, tts as voice_tts
 from .research import web_search
 from .logging_utils import get_logger
+from .agent_planner import compile_nl_to_dsl, validate_graph, save_current_plan
 
 
 class ChatMessage(BaseModel):
@@ -282,6 +283,41 @@ def research_search_endpoint(req: ResearchSearchRequest):
     except Exception:
         pass
     return JSONResponse(web_search(req.query, top_k=int(req.top_k or 5), site=req.site))
+
+
+class AgentsPlanRequest(BaseModel):
+    nl: Optional[str] = None
+    hints: Optional[Dict[str, Any]] = None
+    save: bool = True
+
+
+@router.post("/v1/agents/plan")
+def agents_plan(req: AgentsPlanRequest, request: Request):
+    dsl = compile_nl_to_dsl(req.nl or "", req.hints or {})
+    val = validate_graph(dsl)
+    try:
+        log.info("agents.plan", extra={"validated": val.get("ok", False)})
+    except Exception:
+        pass
+    if req.save and val.get("ok"):
+        from .config_loader import ROOT
+        out = (ROOT / "runtime" / "agents")
+        out.mkdir(parents=True, exist_ok=True)
+        save_current_plan(dsl, str(out / "current.yaml"))
+    return JSONResponse({"dsl": dsl, "validated": bool(val.get("ok")), "issues": val.get("issues", [])})
+
+
+@router.get("/v1/agents/current")
+def agents_current():
+    from .config_loader import ROOT
+    path = ROOT / "runtime" / "agents" / "current.yaml"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="no current plan")
+    try:
+        import json as _json
+        return JSONResponse(_json.loads(path.read_text()))
+    except Exception:
+        return JSONResponse({"error": "invalid plan file"}, status_code=500)
 
 
 class ProfileSwitchRequest(BaseModel):
