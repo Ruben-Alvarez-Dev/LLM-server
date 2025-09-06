@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Vendor and builds
+vendor/llama.cpp/
+vendor/*/build/
+
+# Local SSH keys (if any)
+git_ssh_key
+git_ssh_key.pub

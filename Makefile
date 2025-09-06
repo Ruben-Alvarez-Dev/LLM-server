@@ -15,3 +15,30 @@ run:
 
 models:
 	@$(PY) tools/models_sync.py --create --check
+
+# llama.cpp setup and build (Metal on macOS)
+LLAMA_DIR=vendor/llama.cpp
+
+.PHONY: llama.clone llama.setup llama.build llama.clean llama.test models.download
+
+llama.clone:
+	@if [ ! -d $(LLAMA_DIR) ]; then \
+		git clone --depth 1 https://github.com/ggerganov/llama.cpp $(LLAMA_DIR); \
+	else \
+		echo "llama.cpp already cloned at $(LLAMA_DIR)"; \
+	fi
+
+llama.setup: llama.clone
+	@cmake -S $(LLAMA_DIR) -B $(LLAMA_DIR)/build -DGGML_METAL=ON -DCMAKE_BUILD_TYPE=Release
+
+llama.build:
+	@cmake --build $(LLAMA_DIR)/build --config Release -j
+
+llama.test:
+	@$(LLAMA_DIR)/build/bin/llama-cli -h || true
+
+llama.clean:
+	@rm -rf $(LLAMA_DIR)/build
+
+models.download:
+	@HF_TOKEN="$$HF_TOKEN" $(PY) tools/models_sync.py --create --download
