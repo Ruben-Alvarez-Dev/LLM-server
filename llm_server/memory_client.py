@@ -8,7 +8,7 @@ class MemoryClient:
         self.host = host
         self.port = port
 
-    def search(self, query: str, k: int = 5, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def search(self, query: str, k: int = 5, filters: Optional[Dict[str, Any]] = None, request_id: Optional[str] = None) -> List[Dict[str, Any]]:
         # Stubbed: returns shaped, deterministic examples
         results = []
         for i in range(k):
@@ -19,4 +19,3 @@ class MemoryClient:
                 "metadata": {"source": "stub", "rank": i},
             })
         return results
-
