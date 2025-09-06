@@ -18,9 +18,12 @@ Chapters
 Status
 - [x] Initialize context pack, configs, schemas, validator, profile, Makefile
 - [x] Connect remote (SSH), push baseline
-- [ ] Implement infra (config loader, health/metrics)
-- [ ] Implement model loader + registry
-- [ ] Implement APIs (chat/completions, streaming)
+- [x] Implement infra (config loader, health/metrics)  
+  (logging/IDs tracked in Ch.06)
+- [x] Implement model loader + registry  
+  (runner via llama.cpp CLI; windows/timeout enforced)
+- [x] Implement APIs (chat/completions, streaming)
+- [x] Messaging layer base (Redpanda+NATS, schemas, scripts, SDK)
 - [ ] Wire memory integration stubs
 - [ ] Add ops/telemetry
 - [ ] Tests + validation gates
