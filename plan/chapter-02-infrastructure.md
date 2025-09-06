@@ -10,6 +10,7 @@ Checkpoints
 4. [x] Basic metrics: `/metrics` (requests, latency, errors)
 5. [ ] Structured logging (JSON) + request IDs
 6. [ ] Graceful shutdown and timeouts
+7. [x] Build tooling: llama.cpp Metal targets + models download helper
 
 Acceptance Criteria
 - Health and readiness return 200; metrics expose counters.

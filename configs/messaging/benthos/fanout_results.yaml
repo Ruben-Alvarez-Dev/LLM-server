@@ -1,0 +1,29 @@
+input:
+  kafka_franz:
+    brokers: [ ${KAFKA_BROKERS:"localhost:9092"} ]
+    topics: [ "llm.${TENANT_ID:main}.infer.results.v1" ]
+    consumer_group: "results_fanout_${TENANT_ID:main}"
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - s3:
+          endpoint: ${S3_ENDPOINT:"http://localhost:9000"}
+          bucket: ${S3_BUCKET:"llm-results"}
+          path: ${!"${TENANT_ID:main}/" + this.request_id + ".json"}
+          region: us-east-1
+          credentials:
+            id: ${S3_ACCESS_KEY_ID}
+            secret: ${S3_SECRET_ACCESS_KEY}
+            token: ${S3_SESSION_TOKEN}
+      - http_client:
+          url: ${METRICS_ENDPOINT:"http://localhost:9099/metrics/results"}
+          verb: POST
+          headers:
+            Content-Type: application/json
+          payload: |
+            root = {"tenant_id": this.tenant_id, "count": 1}

@@ -1,0 +1,27 @@
+schemas:
+  format: avro
+  subjects:
+    infer_requests_v1:
+      name: "llm.<tenant>.infer.requests.v1"
+      key: "tenant|model|priority"
+      schema: "configs/messaging/schemas/avro/InferRequestV1.avsc"
+    infer_results_v1:
+      name: "llm.<tenant>.infer.results.v1"
+      schema: "configs/messaging/schemas/avro/InferResultV1.avsc"
+    embeddings_ingest_v1:
+      name: "llm.<tenant>.embeddings.ingest.v1"
+      schema: "configs/messaging/schemas/avro/EmbeddingIngestV1.avsc"
+    memory_events_v1:
+      name: "llm.<tenant>.mem.events.v1"
+      schema: "configs/messaging/schemas/avro/MemoryEventV1.avsc"
+  retry:
+    name: "llm.<tenant>.retry.*"
+  dlq:
+    name: "llm.<tenant>.dlq.*"
+control_plane:
+  subjects:
+    prefix: "ctrl.<tenant>."
+    examples:
+      - "ctrl.<tenant>.workers.scale"
+      - "ctrl.<tenant>.workers.pause"
+      - "ctrl.<tenant>.workers.resume"

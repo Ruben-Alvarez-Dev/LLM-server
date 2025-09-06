@@ -1,0 +1,60 @@
+version: "3.8"
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.1.13
+    command: ["redpanda", "start", "--overprovisioned", "--smp", "1", "--memory", "1G", "--reserve-memory", "0M", "--node-id", "0", "--check=false", "--set", "redpanda.enable_schema_id_validation=false"]
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+      - "${SCHEMA_REGISTRY_PORT:-8081}:8081"
+    environment:
+      - REDPANDA_AUTO_CREATE_TOPICS=true
+    healthcheck:
+      test: ["CMD", "curl", "-sSf", "http://localhost:9644/v1/status/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redpanda-console:
+    image: redpandadata/console:v2.7.2
+    environment:
+      - KAFKA_BROKERS=redpanda:9092
+      - KAFKA_SCHEMAREGISTRY_ENABLED=true
+      - KAFKA_SCHEMAREGISTRY_URLS=http://redpanda:8081
+    ports:
+      - "${KAFKA_CONSOLE_PORT:-8080}:8080"
+    depends_on:
+      - redpanda
+
+  nats:
+    image: nats:2.10
+    command: ["-js", "--http_port", "8222", "--tls"]
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "${NATS_HTTP_PORT:-8222}:8222"
+    healthcheck:
+      test: ["CMD", "curl", "-sSf", "http://localhost:8222/varz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redpanda-connect:
+    image: ghcr.io/redpanda-data/connect:latest
+    environment:
+      - CONNECT_LOG_LEVEL=info
+    depends_on:
+      - redpanda
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4195/readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  nats-box:
+    image: synadia/nats-box:0.14.1
+    command: ["sleep", "infinity"]
+    depends_on:
+      - nats
+
+networks:
+  default:
+    name: messaging-net

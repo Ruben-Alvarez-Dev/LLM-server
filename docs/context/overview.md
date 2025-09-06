@@ -6,6 +6,18 @@ Architecture Summary
 - Memory-server provides NVMe-backed vector retrieval with hierarchical summaries (N1–N5) and caches hot chunks.
 - A single active profile name is stored in `runtime/current_profile`, selecting config under `configs/custom_profiles/`.
 
+Messaging Layer
+- Data-plane: Redpanda (Kafka API) for high-throughput topics across inference, results, embeddings, and DLQ/retry.
+- Control-plane: NATS JetStream for lightweight signals (heartbeats, start/stop, leases) per-tenant accounts.
+- ETL: Benthos (Redpanda Connect) to fan-out results and ingest embeddings to vector DBs (e.g., pgvector).
+- Tenancy: Single-tenant by default; multi-tenant via `TENANCY_MODE` switch without migrations. Topic/subject conventions ensure isolation.
+- When to use Pulsar: strict multi-tenant with namespaces/tenants built-in, tiered storage, geo-replication. Provided as optional profile in `configs/messaging/pulsar-profile`.
+
+High-level Flow
+- Inference: API → produce InferRequest → workers consume → generate → produce InferResult → fan-out/archive via Benthos → metrics.
+- Embeddings: Producers write `embeddings.ingest` → ETL batches and writes to vector store → ack/metrics.
+- Control: NATS subjects per tenant for heartbeats, capacity signals, backpressure, and feature toggles.
+
 Data Flow
 - User prompt → Router → (Planner/Architect) → Coder → Verifiers → Finalizer.
 - Each role calls LLM-server with its context window limits and may query Memory-server for relevant context.

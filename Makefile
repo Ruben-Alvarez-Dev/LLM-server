@@ -24,6 +24,13 @@ r=ModelRegistry(); r.refresh()
 print(r.readiness_report())
 PY
 
+.PHONY: messaging-up messaging-down
+messaging-up:
+	docker compose -f configs/messaging/docker-compose.dev.yml up -d
+
+messaging-down:
+	docker compose -f configs/messaging/docker-compose.dev.yml down -v
+
 # llama.cpp setup and build (Metal on macOS)
 LLAMA_DIR=vendor/llama.cpp
 

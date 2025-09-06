@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "EmbeddingIngestV1",
+  "namespace": "ai.llm",
+  "fields": [
+    {"name": "tenant_id", "type": "string"},
+    {"name": "doc_id", "type": "string"},
+    {"name": "text", "type": "string"},
+    {"name": "metadata", "type": {"type": "map", "values": "string"}},
+    {"name": "timestamp_ms", "type": "long"}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "MemoryEventV1",
+  "namespace": "ai.llm",
+  "fields": [
+    {"name": "tenant_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "payload", "type": {"type": "map", "values": ["string", "int", "long", "double", "boolean"]}},
+    {"name": "timestamp_ms", "type": "long"}
+  ]
+}

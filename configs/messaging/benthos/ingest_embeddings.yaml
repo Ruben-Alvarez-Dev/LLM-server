@@ -1,0 +1,31 @@
+input:
+  kafka_franz:
+    brokers: [ ${KAFKA_BROKERS:"localhost:9092"} ]
+    topics: [ "llm.${TENANT_ID:main}.embeddings.ingest.v1" ]
+    consumer_group: "embeddings_ingest_${TENANT_ID:main}"
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+        root.tenant_id = this.tenant_id
+        root.id = this.doc_id
+        root.text = this.text
+        root.metadata = this.metadata
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - sql_insert:
+          driver: postgres
+          dsn: ${PGVECTOR_DSN:"host=localhost user=postgres password=postgres dbname=vec sslmode=disable"}
+          table: embeddings
+          columns: [tenant_id, id, text, metadata]
+          args_mapping: |
+            root = [ this.tenant_id, this.id, this.text, this.metadata ]
+      - http_client:
+          url: ${METRICS_ENDPOINT:"http://localhost:9099/metrics/embeddings"}
+          verb: POST
+          headers:
+            Content-Type: application/json
+          payload: |
+            root = {"tenant_id": this.tenant_id, "count": 1}

@@ -1,0 +1,11 @@
+TENANCY_MODE: single
+DEFAULT_TENANT_ID: main
+quotas:
+  main:
+    throughput_msgs_per_s: 200
+    storage_days: 3
+    max_consumers: 8
+  example_tenant:
+    throughput_msgs_per_s: 100
+    storage_days: 3
+    max_consumers: 4

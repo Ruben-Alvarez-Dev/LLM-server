@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "InferResultV1",
+  "namespace": "ai.llm",
+  "fields": [
+    {"name": "request_id", "type": "string"},
+    {"name": "tenant_id", "type": "string"},
+    {"name": "model", "type": "string"},
+    {"name": "status", "type": {"type": "enum", "name": "Status", "symbols": ["ok", "error", "timeout"]}},
+    {"name": "output", "type": "string"},
+    {"name": "usage", "type": {"type": "record", "name": "UsageV1", "fields": [
+      {"name": "prompt_tokens", "type": "int"},
+      {"name": "completion_tokens", "type": "int"},
+      {"name": "total_tokens", "type": "int"}
+    ]}},
+    {"name": "error", "type": ["null", "string"], "default": null},
+    {"name": "latency_ms", "type": "long"},
+    {"name": "timestamp_ms", "type": "long"}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "InferRequestV1",
+  "namespace": "ai.llm",
+  "fields": [
+    {"name": "request_id", "type": "string"},
+    {"name": "tenant_id", "type": "string"},
+    {"name": "model", "type": "string"},
+    {"name": "priority", "type": {"type": "enum", "name": "Priority", "symbols": ["low", "normal", "high"]}},
+    {"name": "prompt", "type": "string"},
+    {"name": "params", "type": {"type": "map", "values": ["double", "string", "int", "long", "boolean"]}},
+    {"name": "timestamp_ms", "type": "long"}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "title": "Messaging Overview",
+  "panels": [
+    {"type": "stat", "title": "Produced msgs/s"},
+    {"type": "stat", "title": "Consumed msgs/s"},
+    {"type": "graph", "title": "Consumer Lag"},
+    {"type": "graph", "title": "p50/p95/p99 Latency"}
+  ]
+}
