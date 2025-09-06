@@ -12,6 +12,7 @@ MODELS_PATH = ROOT / 'configs' / 'models.yaml'
 LIMITS_PATH = ROOT / 'configs' / 'limits.yaml'
 PROFILE_PATH = ROOT / 'configs' / 'custom_profiles' / 'dev-default.yaml'
 CURRENT_PROFILE_PATH = ROOT / 'runtime' / 'current_profile'
+API_CFG_PATH = ROOT / 'configs' / 'api.yaml'
 
 def load_jsonlike(path: Path):
     try:
@@ -130,11 +131,18 @@ def main():
         models_data = load_jsonlike(MODELS_PATH)
         limits_data = load_jsonlike(LIMITS_PATH)
         profile_data = load_jsonlike(PROFILE_PATH)
+        api_data = None
+        if API_CFG_PATH.exists():
+            api_data = load_jsonlike(API_CFG_PATH)
 
         models = validate_models(models_data)
         model_names = {m['name'] for m in models}
         validate_limits(limits_data)
         profile_name, selected_models, ram_budget_gb, memory_server_ram_gb = validate_profile(profile_data, model_names)
+        if api_data is not None:
+            require(isinstance(api_data, dict), 'api.yaml must be an object')
+            comp = api_data.get('compatibility', {})
+            require(isinstance(comp, dict), 'api.yaml: compatibility must be an object')
 
         # current_profile consistency
         current = read_current_profile_name()

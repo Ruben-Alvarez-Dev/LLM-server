@@ -64,3 +64,7 @@ sequenceDiagram
   OR->>NT: ctrl.<tenant>.workers.pause/resume
   WK-->>NT: ctrl.<tenant>.workers.heartbeat
 ```
+
+API & MCP
+- HTTP API adheres to OpenAI Chat Completions shapes and streaming. See `docs/context/api-compat.md`.
+- MCP server exposes `llm.chat` over stdio (JSON-RPC). Provides parity with HTTP chat, enabling tool-based integrations.

@@ -18,11 +18,7 @@ models:
 
 .PHONY: models.verify
 models.verify:
-	@$(PY) - <<'PY'
-from llm_server.registry import ModelRegistry
-r=ModelRegistry(); r.refresh()
-print(r.readiness_report())
-PY
+	@$(PY) -c "from llm_server.registry import ModelRegistry; r=ModelRegistry(); r.refresh(); import json; print(json.dumps(r.readiness_report(), indent=2))"
 
 .PHONY: messaging-up messaging-down
 messaging-up:
@@ -30,6 +26,21 @@ messaging-up:
 
 messaging-down:
 	docker compose -f configs/messaging/docker-compose.dev.yml down -v
+
+.PHONY: api.smoke mcp.run
+api.smoke:
+	@. .venv/bin/activate; python - <<'PY'
+from fastapi.testclient import TestClient
+from llm_server.app import create_app
+app=create_app();
+if not hasattr(app,'state'): print('FastAPI not available'); raise SystemExit(1)
+client=TestClient(app)
+r=client.get('/v1/models'); print('models:', r.status_code, r.json())
+r=client.post('/v1/chat/completions', json={'model':'phi-4-mini-instruct','messages':[{'role':'user','content':'say hi'}]}); print('chat:', r.status_code)
+PY
+
+mcp.run:
+	@. .venv/bin/activate; python -c "import llm_server.mcp_server as m; m.main()"
 
 # llama.cpp setup and build (Metal on macOS)
 LLAMA_DIR=vendor/llama.cpp

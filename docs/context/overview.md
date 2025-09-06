@@ -18,6 +18,9 @@ High-level Flow
 - Embeddings: Producers write `embeddings.ingest` → ETL batches and writes to vector store → ack/metrics.
 - Control: NATS subjects per tenant for heartbeats, capacity signals, backpressure, and feature toggles.
 
+Interfaces
+- HTTP API: OpenAI-compatible endpoints for chat/completions (see `docs/context/api-compat.md`).
+- MCP: Optional stdio JSON-RPC server for MCP clients (e.g., Claude Desktop/Cline), exposing `llm.chat` and future tools.
 Data Flow
 - User prompt → Router → (Planner/Architect) → Coder → Verifiers → Finalizer.
 - Each role calls LLM-server with its context window limits and may query Memory-server for relevant context.

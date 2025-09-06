@@ -1,0 +1,19 @@
+compatibility:
+  openai_chat_completions: true
+  text_completions: true
+  responses_api: false
+  function_calling: true
+  tool_choice_parallel: true
+  copilot_compat: true
+
+presets:
+  continue_modes:
+    fast: { max_tokens: 256, temperature: 0.1 }
+    smart: { max_tokens: 512, temperature: 0.2 }
+    deep: { max_tokens: 1024, temperature: 0.1 }
+
+mcp:
+  enabled: true
+  tools:
+    - name: llm.chat
+    - name: memory.search

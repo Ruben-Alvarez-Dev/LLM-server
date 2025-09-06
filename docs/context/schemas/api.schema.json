@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "api.schema.json",
+  "type": "object",
+  "required": ["compatibility", "presets", "mcp"],
+  "additionalProperties": false,
+  "properties": {
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "openai_chat_completions": {"type": "boolean"},
+        "text_completions": {"type": "boolean"},
+        "responses_api": {"type": "boolean"},
+        "function_calling": {"type": "boolean"},
+        "tool_choice_parallel": {"type": "boolean"},
+        "copilot_compat": {"type": "boolean"}
+      }
+    },
+    "presets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "continue_modes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max_tokens": {"type": "integer", "minimum": 1},
+              "temperature": {"type": "number", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "tools": {
+          "type": "array",
+          "items": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}
+        }
+      }
+    }
+  }
+}
