@@ -15,7 +15,8 @@
         "path": ".",
         "soft_pct": 0.75,
         "hard_pct": 0.85,
-        "max_evict_per_tick_gb": 1.0
+        "max_evict_per_tick_gb": 1.0,
+        "evict_dirs": ["logs", "runtime/agents"]
       },
       "backpressure": {
         "enable_soft": true,
@@ -36,7 +37,8 @@
         "path": ".",
         "soft_pct": 0.80,
         "hard_pct": 0.92,
-        "max_evict_per_tick_gb": 2.0
+        "max_evict_per_tick_gb": 2.0,
+        "evict_dirs": ["logs", "runtime/agents"]
       },
       "backpressure": {
         "enable_soft": false,
@@ -57,7 +59,8 @@
         "path": ".",
         "soft_pct": 0.70,
         "hard_pct": 0.82,
-        "max_evict_per_tick_gb": 0.5
+        "max_evict_per_tick_gb": 0.5,
+        "evict_dirs": ["logs", "runtime/agents"]
       },
       "backpressure": {
         "enable_soft": true,

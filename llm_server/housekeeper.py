@@ -226,11 +226,18 @@ class Housekeeper:
                     models_root = str(Path(cfg.get('models_root', '.')).resolve())
                     default_dirs = [
                         str(Path('logs').resolve()),
-                        str(Path('runtime') / 'agents'),
-                        str(Path(models_root) / '_cache'),
-                        str(Path(models_root) / 'cache'),
+                        str((Path('runtime') / 'agents').resolve()),
+                        str((Path(models_root) / '_cache').resolve()),
+                        str((Path(models_root) / 'cache').resolve()),
                     ]
-                    evict_dirs = ssd_pol.get('evict_dirs', default_dirs)
+                    raw_dirs = ssd_pol.get('evict_dirs')
+                    if isinstance(raw_dirs, list) and raw_dirs:
+                        evict_dirs = [str(Path(d).resolve()) for d in raw_dirs] + default_dirs
+                        # de-dup preserving order
+                        seen = set()
+                        evict_dirs = [d for d in evict_dirs if not (d in seen or seen.add(d))]
+                    else:
+                        evict_dirs = default_dirs
                     # Plan
                     if target_bytes > 0 and disk.get('pressure', 0.0) >= soft_pct:
                         candidates, planned_bytes = _plan_ssd_eviction(evict_dirs, target_bytes)

@@ -48,7 +48,8 @@ Always-On Metrics
 SSD Soft-Eviction (prepared)
 - A per-tick soft-eviction is implemented behind `actions_enabled` (disabled by default).
 - When disk pressure exceeds `ssd.soft_pct`, the housekeeper plans evictions up to `ssd.max_evict_per_tick_gb` toward returning under the soft watermark.
-- Candidate directories default to `logs/`, `runtime/agents/`, and `{models_root}/_cache|cache` and are configurable via `ssd.evict_dirs`.
+- Candidate directories por defecto: `logs/`, `runtime/agents/`, y caches bajo `models_root` (`_cache` y `cache`).
+- `ssd.evict_dirs` en YAML se combina con los defaults (no los reemplaza) y se resuelven rutas absolutas; esto permite añadir otras ubicaciones seguras sin perder caches por defecto.
 - With actions disabled, eviction is not executed; planning details are logged in `housekeeper.tick`.
 
 Ejemplos
