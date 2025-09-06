@@ -1,8 +1,9 @@
 {
   "default_strategy": "balanced",
+  "free_reserve": { "min_gb": 8, "pct": 0.10 },
   "strategies": {
     "balanced": {
-      "interval_s": 10,
+      "interval_s": 3,
       "metrics_always_on": true,
       "actions_enabled": false,
       "ram": {
@@ -21,7 +22,7 @@
       }
     },
     "performance": {
-      "interval_s": 5,
+      "interval_s": 2,
       "metrics_always_on": true,
       "actions_enabled": false,
       "ram": {
@@ -40,7 +41,7 @@
       }
     },
     "safety": {
-      "interval_s": 15,
+      "interval_s": 5,
       "metrics_always_on": true,
       "actions_enabled": false,
       "ram": {
@@ -60,4 +61,3 @@
     }
   }
 }
-
