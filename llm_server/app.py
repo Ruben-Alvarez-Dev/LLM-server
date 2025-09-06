@@ -29,6 +29,13 @@ def create_app() -> Any:
 
     registry = ModelRegistry()
     registry.refresh()
+    # Concurrency manager (stored for future API usage)
+    try:
+        from .concurrency import ConcurrencyManager
+
+        conc = ConcurrencyManager()
+    except Exception:
+        conc = None
 
     @app.get("/readyz")
     def readyz() -> Dict[str, Any]:
@@ -41,4 +48,5 @@ def create_app() -> Any:
     # Attach config for downstream use
     app.state.config = cfg  # type: ignore[attr-defined]
     app.state.registry = registry  # type: ignore[attr-defined]
+    app.state.concurrency = conc  # type: ignore[attr-defined]
     return app

@@ -6,8 +6,8 @@ Goals
 Checkpoints
 1. [x] Model registry reads `configs/models.yaml` and maps to ../models files
 2. [x] Loader adapter (llama.cpp CLI wrapper) scaffold
-3. [ ] Concurrency controls per role from limits/profile
-4. [ ] Context window enforcement
+3. [x] Concurrency controls per role from limits/profile
+4. [x] Context window enforcement (heuristic)
 5. [x] Step cutoff enforcement (timeout in runner)
 6. [x] Speculative decoding hook (delegates to target for now)
 
