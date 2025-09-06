@@ -11,6 +11,30 @@ from .config_loader import build_effective_config
 from .registry import ModelRegistry
 from .metrics import metrics
 from .logging_utils import get_logger, new_request_id, set_request_id
+import threading
+
+
+class _RateLimiter:
+    def __init__(self, rps: float, burst: int) -> None:
+        self.rps = max(0.0, float(rps))
+        self.burst = max(1, int(burst))
+        self._lock = threading.Lock()
+        self._buckets: dict[str, tuple[float, float]] = {}  # key -> (tokens, last_ts)
+
+    def allow(self, key: str, now: float) -> bool:
+        if self.rps <= 0:
+            return True
+        with self._lock:
+            tokens, last = self._buckets.get(key, (self.burst, now))
+            # refill
+            elapsed = max(0.0, now - last)
+            tokens = min(self.burst, tokens + elapsed * self.rps)
+            if tokens < 1.0:
+                self._buckets[key] = (tokens, now)
+                return False
+            tokens -= 1.0
+            self._buckets[key] = (tokens, now)
+            return True
 try:
     from .api import router as api_router
 except Exception:
@@ -32,6 +56,31 @@ def create_app() -> Any:
     # Request ID + structured access logs
     @app.middleware("http")
     async def request_context(request, call_next):  # type: ignore[no-redef]
+        # Basic rate limiting per-client (optional via env)
+        import os as _os
+        _rl_enabled = _os.getenv("RATE_LIMIT_ENABLED", "1") in ("1", "true", "on")
+        if _rl_enabled:
+            try:
+                rps = float(_os.getenv("RATE_LIMIT_RPS", "20"))
+                burst = int(_os.getenv("RATE_LIMIT_BURST", "40"))
+            except Exception:
+                rps, burst = 20.0, 40
+            limiter = getattr(app.state, "_limiter", None)
+            if limiter is None or getattr(limiter, "rps", None) != rps or getattr(limiter, "burst", None) != burst:
+                limiter = _RateLimiter(rps=rps, burst=burst)
+                app.state._limiter = limiter  # type: ignore[attr-defined]
+            client = getattr(request, "client", None)
+            ip = getattr(client, "host", "?")
+            now = __import__("time").time()
+            key = f"{ip}"
+            if not limiter.allow(key, now):
+                metrics.inc("rate_limited_total", 1)
+                metrics.inc(f"rate_limited_total:{request.method} {request.url.path}", 1)
+                try:
+                    log.info("rate_limit", extra={"ip": ip, "method": request.method, "path": request.url.path, "rps": limiter.rps, "burst": limiter.burst})
+                except Exception:
+                    pass
+                return JSONResponse({"error": {"code": 429, "message": "rate limit exceeded"}}, status_code=429)
         # Incoming header support
         try:
             incoming = request.headers.get("x-request-id") or request.headers.get("X-Request-Id")

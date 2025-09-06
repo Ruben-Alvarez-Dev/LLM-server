@@ -84,6 +84,7 @@ def info(request: Request):
     base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
     agents_prefix = base + 100
     models_prefix = base + 200
+    voice_enabled = os.getenv("FEATURE_VOICE", "0") in ("1","true","on")
     return {
         "name": "llm-server",
         "version": "0.1.0",
@@ -109,9 +110,11 @@ def info(request: Request):
             "vision_ready": "/v1/vision/ready",
             "embeddings": "/v1/embeddings",
             "embeddings_ready": "/v1/embeddings/ready",
-            "voice_transcribe": "/v1/voice/transcribe",
-            "voice_tts": "/v1/voice/tts",
-            "voice_ready": "/v1/voice/ready",
+            **({
+                "voice_transcribe": "/v1/voice/transcribe",
+                "voice_tts": "/v1/voice/tts",
+                "voice_ready": "/v1/voice/ready",
+            } if voice_enabled else {}),
             "research_search": "/v1/research/search",
             "research_ready": "/v1/research/ready",
             "tools": "/v1/tools",
@@ -145,14 +148,16 @@ def ports_map(request: Request):
     base = int(cfg["ports"]["llm_server"]) // 1000 * 1000
     agents_prefix = base + 100
     models_prefix = base + 200
+    voice_enabled = os.getenv("FEATURE_VOICE", "0") in ("1","true","on")
     # Only hub endpoints (0-ending). Individuals (1-9) not exposed in this release.
     hubs = [
         {"name": "orchestrator", "port": agents_prefix + 10},
         {"name": "vision", "port": models_prefix + 20},
         {"name": "embeddings", "port": models_prefix + 30},
-        {"name": "voice", "port": models_prefix + 40},
         {"name": "research", "port": models_prefix + 50},
     ]
+    if voice_enabled:
+        hubs.insert(3, {"name": "voice", "port": models_prefix + 40})
     return {
         "base": base,
         "ranges": {
@@ -277,6 +282,41 @@ def research_search_endpoint(req: ResearchSearchRequest):
     except Exception:
         pass
     return JSONResponse(web_search(req.query, top_k=int(req.top_k or 5), site=req.site))
+
+
+class ProfileSwitchRequest(BaseModel):
+    name: str
+
+
+@router.post("/admin/profile/switch")
+def profile_switch(req: ProfileSwitchRequest, request: Request):
+    from pathlib import Path
+    from .config_loader import ROOT, build_effective_config
+    # Validate profile exists
+    path = ROOT / "configs" / "custom_profiles" / f"{req.name}.yaml"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="profile not found")
+    # Write runtime pointer
+    (ROOT / "runtime" / "current_profile").write_text(req.name)
+    # Rebuild config and registry/concurrency
+    app = request.app
+    cfg = build_effective_config()
+    app.state.config = cfg  # type: ignore[attr-defined]
+    try:
+        from .registry import ModelRegistry
+        from .concurrency import ConcurrencyManager
+        reg = ModelRegistry(); reg.refresh()
+        app.state.registry = reg  # type: ignore[attr-defined]
+        app.state.concurrency = ConcurrencyManager()  # type: ignore[attr-defined]
+    except Exception:
+        pass
+    try:
+        log.info("profile.switch", extra={"to": req.name})
+    except Exception:
+        pass
+    # Report readiness snapshot
+    rep = getattr(app.state, 'registry', None) and app.state.registry.readiness_report()
+    return JSONResponse({"status": "accepted", "profile": req.name, "readiness": rep or {}})
 
 
 @router.get("/v1/research/ready")
