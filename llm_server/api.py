@@ -92,6 +92,7 @@ def info(request: Request):
         "profile": cfg.get("profile_name"),
         "ports": cfg.get("ports", {}),
         "vision": cfg.get("vision", {}),
+        "embeddings": cfg.get("embeddings", []),
         "port_blocks": {
             "agents": {"prefix": agents_prefix, "range": [agents_prefix + 1, agents_prefix + 99]},
             "models": {"prefix": models_prefix, "range": [models_prefix + 1, models_prefix + 99]},
@@ -110,7 +111,10 @@ def info(request: Request):
             "vision_analyze": "/v1/vision/analyze",
             "vision_ready": "/v1/vision/ready",
             "embeddings": "/v1/embeddings",
+            "embeddings_list": "/v1/embeddings/list",
+            "embeddings_named": "/v1/embeddings/{name}",
             "embeddings_ready": "/v1/embeddings/ready",
+            "embeddings_named_ready": "/v1/embeddings/{name}/ready",
             **({
                 "voice_transcribe": "/v1/voice/transcribe",
                 "voice_tts": "/v1/voice/tts",
@@ -154,9 +158,11 @@ def ports_map(request: Request):
     hubs = [
         {"name": "orchestrator", "port": agents_prefix + 10},
         {"name": "vision", "port": models_prefix + 20},
-        {"name": "embeddings", "port": models_prefix + 30},
         {"name": "research", "port": models_prefix + 50},
     ]
+    # allocate embeddings hubs by config (30 + 10*i)
+    for i, emb in enumerate(cfg.get("embeddings", [])[:9]):
+        hubs.append({"name": f"embeddings-{emb.get('name','e'+str(i))}", "port": models_prefix + 30 + 10 * i})
     if voice_enabled:
         hubs.insert(3, {"name": "voice", "port": models_prefix + 40})
     return {
@@ -208,15 +214,19 @@ class EmbeddingsRequest(BaseModel):
     model: Optional[str] = None
     input: Any
     encoding_format: Optional[str] = "float"
-    dimensions: Optional[int] = 256
+    dimensions: Optional[int] = None
+    name: Optional[str] = None
 
 
 @router.post("/v1/embeddings")
 def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
+    cfg = request.app.state.config
+    embeddings_cfg = cfg.get("embeddings", [])
+    default_dim = int(embeddings_cfg[0].get("dimensions", 256)) if embeddings_cfg else 256
     texts = req.input if isinstance(req.input, list) else [req.input]
-    dim = int(req.dimensions or 256)
+    dim = int(req.dimensions or default_dim)
     try:
-        log.info("embeddings.generate", extra={"count": len(texts), "dim": dim, "format": req.encoding_format or "float"})
+        log.info("embeddings.generate", extra={"count": len(texts), "dim": dim, "format": req.encoding_format or "float", "name": req.name or (embeddings_cfg and embeddings_cfg[0].get('name'))})
     except Exception:
         pass
     vecs = embed_texts([str(t) for t in texts], dim=dim)
@@ -231,9 +241,39 @@ def embeddings_endpoint(req: EmbeddingsRequest, request: Request):
     return JSONResponse({"object": "list", "data": data_items, "model": req.model or "stub-embeddings", "usage": {"prompt_tokens": 0, "total_tokens": 0}})
 
 
+@router.post("/v1/embeddings/{name}")
+def embeddings_named_endpoint(name: str, req: EmbeddingsRequest, request: Request):
+    cfg = request.app.state.config
+    embeddings_cfg = {e.get("name"): e for e in cfg.get("embeddings", [])}
+    ecfg = embeddings_cfg.get(name)
+    if not ecfg:
+        raise HTTPException(status_code=404, detail="embeddings not found")
+    # Prefer provided dimensions, else config default
+    if req.dimensions is None:
+        req.dimensions = int(ecfg.get("dimensions", 256))
+    req.name = name
+    return embeddings_endpoint(req, request)
+
+
 @router.get("/v1/embeddings/ready")
 def embeddings_ready():
     return JSONResponse({"ready": True, "mode": "stub", "dimensions_default": 256})
+
+
+@router.get("/v1/embeddings/{name}/ready")
+def embeddings_named_ready(name: str, request: Request):
+    cfg = request.app.state.config
+    embeddings_cfg = {e.get("name"): e for e in cfg.get("embeddings", [])}
+    ecfg = embeddings_cfg.get(name)
+    if not ecfg:
+        raise HTTPException(status_code=404, detail="embeddings not found")
+    return JSONResponse({"ready": True, "mode": "stub", "dimensions_default": int(ecfg.get("dimensions", 256))})
+
+
+@router.get("/v1/embeddings/list")
+def embeddings_list(request: Request):
+    cfg = request.app.state.config
+    return JSONResponse({"items": cfg.get("embeddings", [])})
 
 
 class VoiceTranscribeRequest(BaseModel):

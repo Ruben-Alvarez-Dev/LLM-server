@@ -118,6 +118,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "title": "embeddings.generate.input",
                 "type": "object",
                 "properties": {
+                    "name": {"type": "string", "description": "Embeddings service name (optional)"},
                     "model": {"type": "string"},
                     "input": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
                     "encoding_format": {"type": "string", "enum": ["float","base64"], "default": "float"},

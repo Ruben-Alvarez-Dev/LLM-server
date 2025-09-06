@@ -20,6 +20,10 @@
     "est_ram_gb": 6,
     "context_max": 8192
   },
+  "embeddings": [
+    { "name": "default", "dimensions": 256, "purpose": "general" },
+    { "name": "code",    "dimensions": 384, "purpose": "code" }
+  ],
   "concurrency": {
     "router": 1,
     "architect": 1,

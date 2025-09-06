@@ -14,6 +14,9 @@ Endpoints (HTTP)
 - GET /schemas/{name}.json — serve individual JSON Schemas (e.g., memory.search).
 - GET /v1/ports — mapping of agent slots (B100+NN) and model slots (B200+NN) with ports.
 - POST /v1/embeddings — OpenAI-style embeddings; deterministic stub in this release.
+- GET /v1/embeddings/list — list configured embeddings services.
+- POST /v1/embeddings/{name} — generate using named service (uses its default dimensions).
+- GET /v1/embeddings/{name}/ready — readiness for named service.
 - POST /v1/voice/transcribe — ASR stub; returns structure with empty text unless backend present.
 - POST /v1/voice/tts — TTS stub; returns base64 placeholder.
 - POST /v1/research/search — Web/search stub; deterministic results.
@@ -37,7 +40,8 @@ MCP Support
 - Provides an MCP server over stdio (JSON-RPC 2.0) exposing tools:
   - `llm.chat`: fields {model, messages, params} — mirrors HTTP chat.
   - `memory.search` — same schema as HTTP; returns `{ results: [...] }`.
-  - `embeddings.generate` — OpenAI-like embeddings output.
+- `embeddings.generate` — OpenAI-like embeddings output.
+    - Optional `name` selects a configured embeddings service; default dimensions come from the profile.
   - `voice.transcribe` / `voice.tts` — mirror HTTP schemas.
   - `research.search` — mirror HTTP schema.
   - `agents.plan` — NL→DSL planning (parity with HTTP), persists current plan optionally.

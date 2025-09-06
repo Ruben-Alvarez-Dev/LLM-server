@@ -116,6 +116,7 @@ def build_effective_config() -> Dict[str, Any]:
         "models_root": str((ROOT.parent / "models").resolve()),
         "processes": profile.get("processes", {}),
         "vision": profile.get("vision", {"model": "qwen2-vl-7b-instruct-q4_k_m"}),
+        "embeddings": profile.get("embeddings", [{"name": "default", "dimensions": 256, "purpose": "general"}]),
         "notes": profile.get("notes", ""),
     }
     return cfg

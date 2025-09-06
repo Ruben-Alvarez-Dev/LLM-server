@@ -76,9 +76,21 @@ def main() -> int:
                 _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": json.dumps(out)}]}})
             elif name == "embeddings.generate":
                 inp = args.get("input")
-                dims = int(args.get("dimensions") or 256)
                 texts = inp if isinstance(inp, list) else [inp]
-                vecs = embed_texts([str(t) for t in texts], dim=dims)
+                # use named embeddings config default dimensions if provided
+                dims = args.get("dimensions")
+                try:
+                    if not dims:
+                        from .config_loader import build_effective_config
+                        cfg = build_effective_config()
+                        embs = {e.get("name"): e for e in cfg.get("embeddings", [])}
+                        nm = args.get("name")
+                        if nm and nm in embs:
+                            dims = embs[nm].get("dimensions")
+                    dims = int(dims or 256)
+                except Exception:
+                    dims = 256
+                vecs = embed_texts([str(t) for t in texts], dim=int(dims))
                 _write({"jsonrpc":"2.0","id": mid, "result": {"content": [{"type":"json","text": json.dumps({"object":"list","data":[{"object":"embedding","index":i,"embedding":v} for i,v in enumerate(vecs)]})}]}})
             elif name == "voice.transcribe":
                 audio = args.get("audio") or {}
