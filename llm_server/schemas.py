@@ -91,7 +91,7 @@ def tool_list() -> List[Dict[str, Any]]:
                     "ocr": {"type": "string", "enum": ["auto","off","fast"], "default": "auto"}
                 },
                 "required": ["images"],
-                "additionalProperties": false
+                "additionalProperties": False
             },
             "outputSchema": {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -107,7 +107,7 @@ def tool_list() -> List[Dict[str, Any]]:
                     "raw": {"type": "object"}
                 },
                 "required": ["ocr"],
-                "additionalProperties": true
+                "additionalProperties": True
             }
         },
         {
@@ -124,7 +124,7 @@ def tool_list() -> List[Dict[str, Any]]:
                     "dimensions": {"type": "integer", "minimum": 32, "maximum": 2048, "default": 256}
                 },
                 "required": ["input"],
-                "additionalProperties": false
+                "additionalProperties": False
             },
             "outputSchema": {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -137,7 +137,7 @@ def tool_list() -> List[Dict[str, Any]]:
                     "usage": {"type": "object"}
                 },
                 "required": ["object","data"],
-                "additionalProperties": true
+                "additionalProperties": True
             }
         },
         {
@@ -152,7 +152,7 @@ def tool_list() -> List[Dict[str, Any]]:
                     "language": {"type": "string"}
                 },
                 "required": ["audio"],
-                "additionalProperties": false
+                "additionalProperties": False
             },
             "outputSchema": {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -160,7 +160,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "type": "object",
                 "properties": {"text": {"type": "string"}, "segments": {"type": "array"}, "language": {"type": "string"}},
                 "required": ["text"],
-                "additionalProperties": true
+                "additionalProperties": True
             }
         },
         {
@@ -172,7 +172,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "type": "object",
                 "properties": {"text": {"type": "string"}, "voice": {"type": "string"}, "format": {"type": "string", "default": "mp3"}},
                 "required": ["text"],
-                "additionalProperties": false
+                "additionalProperties": False
             },
             "outputSchema": {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -180,7 +180,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "type": "object",
                 "properties": {"audio": {"type": "string"}, "format": {"type": "string"}, "voice": {"type": "string"}},
                 "required": ["audio"],
-                "additionalProperties": true
+                "additionalProperties": True
             }
         },
         {
@@ -192,7 +192,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "type": "object",
                 "properties": {"query": {"type": "string"}, "top_k": {"type": "integer", "default": 5}, "site": {"type": "string"}},
                 "required": ["query"],
-                "additionalProperties": false
+                "additionalProperties": False
             },
             "outputSchema": {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -200,7 +200,7 @@ def tool_list() -> List[Dict[str, Any]]:
                 "type": "object",
                 "properties": {"results": {"type": "array"}},
                 "required": ["results"],
-                "additionalProperties": true
+                "additionalProperties": True
             }
         },
     ]
