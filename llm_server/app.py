@@ -12,6 +12,7 @@ from .registry import ModelRegistry
 from .metrics import metrics
 from .logging_utils import get_logger, new_request_id, set_request_id
 import threading
+from .housekeeper import Housekeeper
 
 
 class _RateLimiter:
@@ -170,4 +171,30 @@ def create_app() -> Any:
     app.state.config = cfg  # type: ignore[attr-defined]
     app.state.registry = registry  # type: ignore[attr-defined]
     app.state.concurrency = conc  # type: ignore[attr-defined]
+
+    # Background housekeeper (metrics only; optional)
+    try:
+        import os as _os
+        hk_enabled = _os.getenv("HOUSEKEEPER_ENABLED", "0") in ("1", "true", "on")
+        if hk_enabled:
+            interval_s = float(_os.getenv("HOUSEKEEPER_INTERVAL_S", "10"))
+            disk_path = str((__import__("pathlib").Path(cfg.get("models_root", ".")).resolve()))
+            hk = Housekeeper(app, interval_s=interval_s, disk_path=disk_path)
+            app.state._housekeeper = hk  # type: ignore[attr-defined]
+
+            @app.on_event("startup")
+            async def _hk_start():  # pragma: no cover - tiny async wrapper
+                try:
+                    hk.start()
+                except Exception:
+                    pass
+
+            @app.on_event("shutdown")
+            async def _hk_stop():  # pragma: no cover
+                try:
+                    hk.stop()
+                except Exception:
+                    pass
+    except Exception:
+        pass
     return app

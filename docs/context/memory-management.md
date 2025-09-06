@@ -26,7 +26,6 @@ Observability
 - Logs: `housekeeper.tick`, `evict`, `backpressure` with reasons and sizes.
 
 Next Steps
-- Define concrete watermarks per profile and publish via `/info`.
-- Add housekeeper stub (disabled by default) with metrics only; later: actionable policies with feature flags.
+- Watermarks and housekeeper now published via `/info.housekeeper`.
+- Enable metrics-only housekeeper with `HOUSEKEEPER_ENABLED=1` and tune via `HOUSEKEEPER_INTERVAL_S`.
 - Validate no impact under load via stress tests; tune tick cadence and step sizes.
-

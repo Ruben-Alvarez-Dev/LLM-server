@@ -22,7 +22,7 @@ def test_discovery_and_ports():
     client = TestClient(app)
 
     r = client.get('/info'); assert r.status_code == 200
-    j = r.json(); assert 'endpoints' in j and 'port_blocks' in j
+    j = r.json(); assert 'endpoints' in j and 'port_blocks' in j and 'housekeeper' in j
 
     t = client.get('/v1/tools'); assert t.status_code == 200
     tools = {tool['name'] for tool in t.json().get('tools', [])}

@@ -86,6 +86,13 @@ def info(request: Request):
     agents_prefix = base + 100
     models_prefix = base + 200
     voice_enabled = os.getenv("FEATURE_VOICE", "0") in ("1","true","on")
+    hk_enabled = os.getenv("HOUSEKEEPER_ENABLED", "0") in ("1","true","on")
+    hk = {
+        "enabled": hk_enabled,
+        "interval_s": float(os.getenv("HOUSEKEEPER_INTERVAL_S", "10")) if hk_enabled else None,
+        "ram_watermarks": {"soft_pct": 0.8, "hard_pct": 0.9},
+        "ssd_watermarks": {"soft_pct": 0.75, "hard_pct": 0.85},
+    }
     return {
         "name": "llm-server",
         "version": "0.1.0",
@@ -93,6 +100,7 @@ def info(request: Request):
         "ports": cfg.get("ports", {}),
         "vision": cfg.get("vision", {}),
         "embeddings": cfg.get("embeddings", []),
+        "housekeeper": hk,
         "port_blocks": {
             "agents": {"prefix": agents_prefix, "range": [agents_prefix + 1, agents_prefix + 99]},
             "models": {"prefix": models_prefix, "range": [models_prefix + 1, models_prefix + 99]},
