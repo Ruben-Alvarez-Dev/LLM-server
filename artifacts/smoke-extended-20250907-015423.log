@@ -1,0 +1,20 @@
+{"level": "info", "ts": 1757202863.44727, "message": "request", "logger": "llm-server", "request_id": "b074cefb1736476c"}
+{"level": "info", "ts": 1757202863.448001, "message": "HTTP Request: GET http://testserver/healthz \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] /healthz — 200
+{"level": "info", "ts": 1757202863.449204, "message": "request", "logger": "llm-server", "request_id": "9c9cc0f22630486d"}
+{"level": "info", "ts": 1757202863.449692, "message": "HTTP Request: GET http://testserver/info \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] /info — 200
+{"level": "info", "ts": 1757202863.451597, "message": "request", "logger": "llm-server", "request_id": "6db799b9d091433e"}
+{"level": "info", "ts": 1757202863.452081, "message": "HTTP Request: POST http://testserver/v1/completions \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] POST /v1/completions (non-stream) — http 200
+{"level": "info", "ts": 1757202863.453686, "message": "request", "logger": "llm-server", "request_id": "72af151f929b4f27"}
+{"level": "info", "ts": 1757202863.454941, "message": "HTTP Request: POST http://testserver/v1/completions \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] POST /v1/completions (stream)
+{"level": "info", "ts": 1757202863.457998, "message": "request", "logger": "llm-server", "request_id": "e5a5fbb5d051450f"}
+{"level": "info", "ts": 1757202863.458501, "message": "HTTP Request: POST http://testserver/v1/chat/completions \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] POST /v1/chat/completions (non-stream) — http 200
+{"level": "info", "ts": 1757202863.4595351, "message": "request", "logger": "llm-server", "request_id": "cd42bad706eb4f0a"}
+{"level": "info", "ts": 1757202863.4606562, "message": "HTTP Request: POST http://testserver/v1/chat/completions \"HTTP/1.1 200 OK\"", "logger": "httpx"}
+ [✔] POST /v1/chat/completions (stream)
+
+Extended smoke: OK

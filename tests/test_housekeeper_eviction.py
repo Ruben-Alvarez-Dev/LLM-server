@@ -18,20 +18,20 @@ def test_eviction_planning_without_deletion(monkeypatch):
 
     monkeypatch.setattr(hk, "_disk_stats", fake_disk_stats)
 
-    # Housekeeper tick rápido
+    # Fast housekeeper tick
     os.environ['HOUSEKEEPER_INTERVAL_S'] = '0.05'
     app = create_app()
     if not hasattr(app, 'state'):
         return
 
-    # Crea archivos temporales como candidatos de evicción
+    # Create temporary files as eviction candidates
     with tempfile.TemporaryDirectory() as tmpdir:
         p = Path(tmpdir)
-        # Crea varios ficheros pequeños
+        # Create several small files
         for i in range(5):
             (p / f"f{i}.bin").write_bytes(os.urandom(64 * 1024))
 
-        # Inyecta policy en caliente: sin acciones y dirs objetivo = tmpdir
+        # Inject runtime policy: actions disabled and target dirs = tmpdir
         pol = getattr(app.state, 'housekeeper_policy', {}) or {}
         ssd = pol.get('ssd', {}) or {}
         ssd['evict_dirs'] = [str(p.resolve())]
@@ -41,7 +41,7 @@ def test_eviction_planning_without_deletion(monkeypatch):
         app.state.housekeeper_policy = pol  # type: ignore[attr-defined]
 
         with TestClient(app) as client:
-            # Espera a que haya snapshot con planificación
+            # Wait for a snapshot with an eviction plan
             t0 = time.time(); snap = None
             while time.time() - t0 < 3.0:
                 r = client.get('/info'); assert r.status_code == 200
@@ -55,6 +55,6 @@ def test_eviction_planning_without_deletion(monkeypatch):
         assert ev.get('planned_files', 0) >= 1
         assert ev.get('done_bytes', 0) == 0
 
-        # Comprueba que los ficheros siguen existiendo (no hay acciones)
+        # Check files still exist (no actions executed)
         for i in range(5):
             assert (p / f"f{i}.bin").exists()

@@ -1,10 +1,10 @@
-"""Métricas incrustadas ligeras para el servidor.
+"""Lightweight embedded metrics for the server.
 
-Exponen contadores, gauges simples (observe) y ventanas deslizantes de duraciones
-para percentiles (p50/p95/p99). Están pensadas para consumo vía `/metrics` y
-no pretenden reemplazar a Prometheus.
+Exposes counters, simple gauges (observe), and sliding windows of durations
+for percentiles (p50/p95/p99). Intended for consumption via `/metrics` and
+not meant to replace Prometheus.
 
-Docstrings en estilo Google para generación automática de documentación.
+Google-style docstrings for automatic documentation.
 """
 
 import threading
@@ -13,13 +13,13 @@ from typing import Dict
 
 
 class Metrics:
-    """Contenedor thread-safe de métricas.
+    """Thread-safe metrics container.
 
-    Métodos principales:
-      - inc: incrementa contadores.
-      - observe: registra el último valor de un gauge.
-      - observe_duration: acumula duraciones para percentiles.
-      - snapshot: exporta todas las métricas en un dict.
+    Main methods:
+      - inc: increment counters.
+      - observe: record the latest value of a gauge.
+      - observe_duration: accumulate durations for percentiles.
+      - snapshot: export all metrics into a dict.
     """
 
     def __init__(self) -> None:
@@ -32,20 +32,20 @@ class Metrics:
         self._durations_ms: Dict[str, list[float]] = {}
 
     def inc(self, key: str, by: int = 1) -> None:
-        """Incrementa el contador `key` en `by` (por defecto 1)."""
+        """Increment the counter `key` by `by` (default 1)."""
         with self._lock:
             self._counters[key] = self._counters.get(key, 0) + by
 
     def observe(self, key: str, value: float) -> None:
-        """Registra el valor actual de un gauge identificado por `key`."""
+        """Record the current value of a gauge identified by `key`."""
         with self._lock:
             self._timings[key] = value
 
     def snapshot(self) -> Dict[str, float]:
-        """Devuelve una instantánea de contadores, gauges y percentiles.
+        """Return a snapshot of counters, gauges, and percentiles.
 
         Returns:
-            Dict[str, float]: Métricas aplanadas listas para serializar.
+            Dict[str, float]: Flattened metrics ready for serialization.
         """
         with self._lock:
             data: Dict[str, float] = {}
@@ -68,12 +68,12 @@ class Metrics:
             return data
 
     def observe_duration(self, key: str, value_ms: float, max_keep: int = 512) -> None:
-        """Acumula una duración en ms bajo `key` manteniendo una ventana `max_keep`.
+        """Accumulate a duration in ms under `key` keeping a window of `max_keep`.
 
         Args:
-            key (str): Nombre lógico de la métrica de duración.
-            value_ms (float): Duración en milisegundos.
-            max_keep (int): Límite de muestras retenidas (ventana). Defaults a 512.
+            key (str): Logical name of the duration metric.
+            value_ms (float): Duration in milliseconds.
+            max_keep (int): Max samples retained (window). Defaults to 512.
         """
         with self._lock:
             arr = self._durations_ms.setdefault(key, [])

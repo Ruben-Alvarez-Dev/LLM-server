@@ -35,11 +35,11 @@ Profiles & YAML
   - `safety`: soft RAM 70%/hard 85%; SSD 70%/82%; 15s tick.
 - Switch at runtime: `POST /admin/housekeeper/strategy {"name":"performance"}`.
 - Inspect current policy: `GET /admin/housekeeper/policy`.
-- `/info.housekeeper` muestra estrategia activa y umbrales.
-  - También expone `beacons: {ram, ssd}` y un `snapshot` en vivo (cuando está disponible) con `headroom` y presiones.
- - Activar/desactivar acciones (evicciones/backpressure) en caliente:
+- `/info.housekeeper` shows the active strategy and watermarks.
+  - It also exposes `beacons: {ram, ssd}` and a live `snapshot` (when available) with `headroom` and pressures.
+ - Enable/disable actions (evictions/backpressure) on the fly:
    - `POST /admin/housekeeper/actions {"enabled": true|false}`
-   - Actualiza `actions_enabled` en la política activa; el housekeeper la respeta en los ticks siguientes.
+   - Updates `actions_enabled` in the active policy; the housekeeper honors it in subsequent ticks.
 
 Always-On Metrics
 - RAM/SSD metrics are always on; actions are gated by policy/flags.
@@ -48,11 +48,11 @@ Always-On Metrics
 SSD Soft-Eviction (prepared)
 - A per-tick soft-eviction is implemented behind `actions_enabled` (disabled by default).
 - When disk pressure exceeds `ssd.soft_pct`, the housekeeper plans evictions up to `ssd.max_evict_per_tick_gb` toward returning under the soft watermark.
-- Candidate directories por defecto: `logs/`, `runtime/agents/`, y caches bajo `models_root` (`_cache` y `cache`).
-- `ssd.evict_dirs` en YAML se combina con los defaults (no los reemplaza) y se resuelven rutas absolutas; esto permite añadir otras ubicaciones seguras sin perder caches por defecto.
+- Default candidate directories: `logs/`, `runtime/agents/`, and caches under `models_root` (`_cache` and `cache`).
+- `ssd.evict_dirs` in YAML is merged with the defaults (does not replace them) and resolved to absolute paths; this allows adding safe locations without losing default caches.
 - With actions disabled, eviction is not executed; planning details are logged in `housekeeper.tick`.
 
-Ejemplos
+Examples
 ```
 curl -s -X POST localhost:8081/admin/housekeeper/actions -H 'Content-Type: application/json' -d '{"enabled": true}'
 curl -s localhost:8081/admin/housekeeper/policy | jq

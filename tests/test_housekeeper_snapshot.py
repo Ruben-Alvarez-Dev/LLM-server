@@ -23,20 +23,20 @@ def test_housekeeper_snapshot_and_endpoints_present():
         from llm_server.app import create_app
     except Exception:
         return
-    # Tick rápido y aseguramos HK habilitado
+    # Fast tick and ensure housekeeper is enabled
     os.environ['HOUSEKEEPER_INTERVAL_S'] = '0.05'
     os.environ['HOUSEKEEPER_ENABLED'] = '1'
     app = create_app()
     if not hasattr(app, 'state'):
         return
     with TestClient(app) as client:
-        # Endpoints incluyen admin de housekeeper
+        # Endpoints include housekeeper admin endpoints
         r = client.get('/info'); assert r.status_code == 200
         j = r.json()
         eps = j.get('endpoints', {})
         assert 'housekeeper_policy' in eps and 'housekeeper_strategy' in eps and 'housekeeper_actions' in eps
 
-        # Espera a snapshot
+        # Wait for a snapshot
         snap = _wait_snapshot(client, timeout_s=3.0)
     assert isinstance(snap, dict)
     assert 'ram' in snap and 'ssd' in snap and 'eviction' in snap
@@ -56,7 +56,7 @@ def test_housekeeper_strategy_switch_and_policy():
     if not hasattr(app, 'state'):
         return
     with TestClient(app) as client:
-        # Detecta estrategias y cambia si disponible
+        # Detect strategies and switch if another is available
         r = client.get('/info'); assert r.status_code == 200
         j = r.json(); strategies = j.get('housekeeper_strategies', [])
         active = j.get('housekeeper', {}).get('strategy')
@@ -67,6 +67,6 @@ def test_housekeeper_strategy_switch_and_policy():
             r2 = client.get('/info'); assert r2.status_code == 200
             assert r2.json().get('housekeeper', {}).get('strategy') == target
 
-        # Política visible
+        # Policy visible
         pol = client.get('/admin/housekeeper/policy')
         assert pol.status_code == 200 and 'policy' in pol.json()

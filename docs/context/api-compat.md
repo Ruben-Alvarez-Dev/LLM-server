@@ -78,16 +78,16 @@ Examples
 
 Function Calling
 - Prep mode enabled: if `tool_choice={type:'function', function:{name:'memory.search'}}`, HTTP chat returns `tool_calls` with arguments and `finish_reason:'tool_calls'`. The client/orchestrator executes the tool (HTTP/MCP) and decides next step.
-- Closed‑loop (opcional): añade `server_tools_execute: true` (o `FC_CLOSED_LOOP=1`) para ejecutar `memory.search` en servidor y devolver un resumen directo.
+- Closed‑loop (optional): set `server_tools_execute: true` (or `FC_CLOSED_LOOP=1`) to execute `memory.search` on the server and return a direct summary.
 
 Examples (chat with memory.search)
-- Prep (cliente orquesta):
+- Prep (orchestrating client):
   {
     "model": "phi-4-mini-instruct",
     "messages": [{"role":"user","content":"find X in memory"}],
     "tool_choice": {"type":"function","function": {"name":"memory.search"}}
   }
-- Closed‑loop (servidor ejecuta):
+- Closed‑loop (server executes):
   {
     "model": "phi-4-mini-instruct",
     "messages": [{"role":"user","content":"find X in memory"}],
@@ -96,5 +96,5 @@ Examples (chat with memory.search)
   }
 
 Admin & Limits
-- Rate limit básico: 429 configurable por env (`RATE_LIMIT_ENABLED`, `RATE_LIMIT_RPS`, `RATE_LIMIT_BURST`).
-- Voice hub: deshabilitado por defecto; activar con `FEATURE_VOICE=1` para que aparezca en `/info` y `/v1/ports`.
+- Basic rate limit: 429, configurable via env (`RATE_LIMIT_ENABLED`, `RATE_LIMIT_RPS`, `RATE_LIMIT_BURST`).
+- Voice hub: disabled by default; enable with `FEATURE_VOICE=1` to appear in `/info` and `/v1/ports`.

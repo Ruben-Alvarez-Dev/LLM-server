@@ -9,7 +9,7 @@ def test_agents_plan_and_current():
         return
     client = TestClient(app)
 
-    r = client.post('/v1/agents/plan', json={'nl': 'Analisis y plan con verificación doble', 'hints': {'include_planner': True, 'verify_steps': 2}})
+    r = client.post('/v1/agents/plan', json={'nl': 'Analysis and plan with double verification', 'hints': {'include_planner': True, 'verify_steps': 2}})
     assert r.status_code == 200
     j = r.json()
     assert j.get('validated') is True

@@ -1,12 +1,12 @@
 from __future__ import annotations
-"""Rutinas de housekeeping para RAM/SSD.
+"""Housekeeping routines for RAM/SSD.
 
-Incluye:
-- Muestreo de RAM y SSD (libre/total, presión, RSS del proceso y descendientes).
-- Cálculo de beacons de salud (RAM/SSD) para logs y `/info`.
-- Planificación y ejecución opcional de soft-eviction por tick (detrás de `actions_enabled`).
+Includes:
+- Sampling RAM and SSD (free/total, pressure, process and children RSS).
+- Computing RAM/SSD health beacons for logs and `/info`.
+- Optional per-tick soft-eviction planning and execution (gated by `actions_enabled`).
 
-Las docstrings siguen estilo Google para facilitar la generación automática de documentación.
+Google-style docstrings to ease automatic documentation.
 """
 
 import os
@@ -23,7 +23,7 @@ import shutil
 
 
 def _mem_stats() -> Dict[str, float]:
-    """Obtiene métricas de memoria del sistema.
+    """Get system memory metrics.
 
     Returns:
         Dict[str, float]: `free_gb`, `total_gb`, `used_gb`, `pressure` (0..1).
@@ -49,10 +49,10 @@ def _mem_stats() -> Dict[str, float]:
 
 
 def _disk_stats(path: str) -> Dict[str, float]:
-    """Calcula métricas del disco para `path`.
+    """Compute disk metrics for `path`.
 
     Args:
-        path (str): Ruta base para consultar `disk_usage`.
+        path (str): Base path for `disk_usage`.
 
     Returns:
         Dict[str, float]: `free_gb`, `total_gb`, `pressure` (0..1).
@@ -74,15 +74,15 @@ def _disk_stats(path: str) -> Dict[str, float]:
 
 
 def _beacon_ram(headroom_gb: float) -> str:
-    """Beacon de salud para RAM basado en `headroom_gb`.
+    """RAM health beacon based on `headroom_gb`.
 
-    Umbrales: critical (≤0), hot (≤2), warn (≤6), ok (>6).
+    Thresholds: critical (≤ 0), hot (≤ 2), warn (≤ 6), ok (> 6).
 
     Args:
-        headroom_gb (float): Margen libre tras reservar `free_reserve`.
+        headroom_gb (float): Free margin after reserving `free_reserve`.
 
     Returns:
-        str: Uno de `ok|warn|hot|critical`.
+        str: One of `ok|warn|hot|critical`.
     """
     try:
         h = float(headroom_gb)
@@ -98,16 +98,16 @@ def _beacon_ram(headroom_gb: float) -> str:
 
 
 def _beacon_ssd(pressure: float, free_gb: float, soft_pct: float, hard_pct: float) -> str:
-    """Beacon de salud para SSD basado en presión y libres.
+    """SSD health beacon based on pressure and free space.
 
     Args:
-        pressure (float): Ratio de ocupación (0..1).
-        free_gb (float): Espacio libre en GB (guardas para críticos bajos).
-        soft_pct (float): Umbral blando de ocupación.
-        hard_pct (float): Umbral duro de ocupación.
+        pressure (float): Utilization ratio (0..1).
+        free_gb (float): Free space in GB (guard for very low free).
+        soft_pct (float): Soft utilization watermark.
+        hard_pct (float): Hard utilization watermark.
 
     Returns:
-        str: Uno de `ok|warn|hot|critical`.
+        str: One of `ok|warn|hot|critical`.
     """
     try:
         p = float(pressure)
@@ -126,13 +126,13 @@ def _beacon_ssd(pressure: float, free_gb: float, soft_pct: float, hard_pct: floa
 
 
 def _list_files_by_oldest(paths: List[str]) -> List[Tuple[str, int, float]]:
-    """Lista archivos de `paths` ordenados por antigüedad ascendente.
+    """List files under `paths` ordered by ascending age (oldest first).
 
     Args:
-        paths (List[str]): Rutas base a recorrer.
+        paths (List[str]): Base paths to walk.
 
     Returns:
-        List[Tuple[str,int,float]]: Tuplas (path, size_bytes, mtime).
+        List[Tuple[str,int,float]]: Tuples (path, size_bytes, mtime).
     """
     out: List[Tuple[str, int, float]] = []
     import os
@@ -159,14 +159,14 @@ def _list_files_by_oldest(paths: List[str]) -> List[Tuple[str, int, float]]:
 
 
 def _plan_ssd_eviction(paths: List[str], target_bytes: int) -> Tuple[List[str], int]:
-    """Planifica una lista de ficheros a eliminar (por LRU) hasta `target_bytes`.
+    """Plan a list of files to delete (LRU) up to `target_bytes`.
 
     Args:
-        paths (List[str]): Directorios candidatos (escaneados recursivamente).
-        target_bytes (int): Presupuesto de bytes a liberar.
+        paths (List[str]): Candidate directories (scanned recursively).
+        target_bytes (int): Budget of bytes to free.
 
     Returns:
-        Tuple[List[str], int]: (lista de paths seleccionados, bytes estimados).
+        Tuple[List[str], int]: (selected file paths, estimated bytes).
     """
     if target_bytes <= 0:
         return [], 0
@@ -182,15 +182,15 @@ def _plan_ssd_eviction(paths: List[str], target_bytes: int) -> Tuple[List[str], 
 
 
 class Housekeeper:
-    """Hilo de housekeeping periódico.
+    """Periodic housekeeping thread.
 
-    Recolecta métricas, calcula beacons y, si la política lo permite,
-    ejecuta soft-eviction por tick.
+    Collects metrics, computes beacons, and if policy allows,
+    performs soft-eviction per tick.
 
     Attributes:
-        app: Referencia a la app FastAPI para leer config/estado.
-        interval_s (float): Intervalo entre ticks.
-        disk_path (str): Ruta base para medir presión de SSD.
+        app: FastAPI app reference to read config/state.
+        interval_s (float): Interval between ticks.
+        disk_path (str): Base path to measure SSD pressure.
     """
     def __init__(self, app, interval_s: float, disk_path: str) -> None:
         self.app = app
@@ -200,7 +200,7 @@ class Housekeeper:
         self._thread: Optional[threading.Thread] = None
 
     def start(self) -> None:
-        """Arranca el hilo de housekeeping (idempotente)."""
+        """Start the housekeeping thread (idempotent)."""
         if self._thread and self._thread.is_alive():
             return
         t = threading.Thread(target=self._run, name="housekeeper", daemon=True)
@@ -208,7 +208,7 @@ class Housekeeper:
         t.start()
 
     def stop(self) -> None:
-        """Detiene el hilo de housekeeping con un join corto."""
+        """Stop the housekeeping thread with a short join."""
         self._stop.set()
         if self._thread and self._thread.is_alive():
             try:
@@ -217,7 +217,7 @@ class Housekeeper:
                 pass
 
     def _run(self) -> None:
-        """Bucle principal del housekeeper (bloqueante en su hilo)."""
+        """Main loop of the housekeeper (runs on its thread)."""
         from .metrics import metrics
         from .logging_utils import get_logger
         log = get_logger("llm-server")

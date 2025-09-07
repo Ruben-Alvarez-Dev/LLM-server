@@ -1,0 +1,58 @@
+{
+  "agents": [
+    {
+      "id": "router",
+      "role": "router"
+    },
+    {
+      "id": "reasoner",
+      "role": "reasoner"
+    },
+    {
+      "id": "coder",
+      "role": "coder"
+    },
+    {
+      "id": "planner",
+      "role": "planner"
+    },
+    {
+      "id": "verifier",
+      "role": "verifier"
+    },
+    {
+      "id": "finalizer",
+      "role": "finalizer"
+    }
+  ],
+  "edges": [
+    {
+      "from": "router",
+      "to": "reasoner"
+    },
+    {
+      "from": "reasoner",
+      "to": "coder"
+    },
+    {
+      "from": "coder",
+      "to": "verifier"
+    },
+    {
+      "from": "verifier",
+      "to": "finalizer"
+    },
+    {
+      "from": "reasoner",
+      "to": "planner"
+    },
+    {
+      "from": "planner",
+      "to": "coder"
+    }
+  ],
+  "entry": "router",
+  "policies": {
+    "verify_steps": 2
+  }
+}

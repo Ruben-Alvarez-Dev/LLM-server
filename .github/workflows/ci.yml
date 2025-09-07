@@ -2,30 +2,43 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
-  test:
+  build-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.9', '3.10', '3.11' ]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-      - name: Install dev dependencies
+          python-version: '3.11'
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - name: Run tests
-        env:
-          PYTHONPATH: .
-          FEATURE_VOICE: '0'
+
+      - name: Validate config
         run: |
-          pytest -q
+          python tools/validate.py
+
+      - name: Run tests
+        run: |
+          python -m pytest -q
+
+      - name: HTTP smoke
+        env:
+          RATE_LIMIT_ENABLED: '0'
+        run: |
+          python tools/smoke_http.py
+
+      - name: HTTP smoke (extended)
+        env:
+          RATE_LIMIT_ENABLED: '0'
+        run: |
+          python tools/smoke_extended.py

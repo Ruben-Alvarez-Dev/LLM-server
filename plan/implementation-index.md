@@ -13,7 +13,7 @@ Chapters
 - Chapter 06 — Ops & Telemetry: structured logs, request IDs, rate limits, backpressure.
 - Chapter 07 — QA & Validation: unit/integration smoke, RAM validation checks, profile validation.
 - Chapter 08 — Tools & Compatibility: OpenAI function-calling, Cline Plan/Act, Continue modes, Copilot FIM.
-- Chapter 09 — Agent Graph (NL → DSL): definición de agentes/circuitos por lenguaje natural y compilación a DSL.
+- Chapter 09 — Agent Graph (NL → DSL): define agents/circuits via natural language and compile to DSL.
 
 Status
 - [x] Initialize context pack, configs, schemas, validator, profile, Makefile
@@ -32,7 +32,7 @@ Status
 - [x] Add profile-agnostic Vision endpoint (HTTP+MCP)
 - [x] Tests + validation gates (smoke, CI)
 - [x] Tools & Compatibility (Ch.08) — prep + optional closed-loop
-- [x] Agent Graph NL→DSL (Ch.09) — esqueleto mínimo (plan/current)
+- [x] Agent Graph NL→DSL (Ch.09) — minimal skeleton (plan/current)
 
 Backlog (Next)
 - [x] Embeddings config validation and docs (multi-instance)

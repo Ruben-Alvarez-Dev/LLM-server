@@ -23,11 +23,11 @@ def _nl_hints_to_overrides(nl: str) -> Dict[str, Any]:
     text = (nl or "").lower()
     overrides: Dict[str, Any] = {}
     # Tiny heuristics (non-intrusive)
-    if "análisis" in text or "analysis" in text:
+    if "analysis" in text:
         overrides["include_reasoner"] = True
     if "plan" in text or "planner" in text:
         overrides["include_planner"] = True
-    if "verificar dos" in text or "verify x2" in text or "double-check" in text:
+    if "double verification" in text or "verify x2" in text or "double-check" in text or "verify twice" in text:
         overrides["verify_steps"] = 2
     return overrides
 
@@ -86,4 +86,3 @@ def validate_graph(dsl: Dict[str, Any]) -> Dict[str, Any]:
 def save_current_plan(dsl: Dict[str, Any], path: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         f.write(json.dumps(dsl, ensure_ascii=False, indent=2))
-

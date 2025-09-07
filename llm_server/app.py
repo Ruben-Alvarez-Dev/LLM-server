@@ -1,10 +1,10 @@
-"""Inicialización de la aplicación y middleware.
+"""Application initialization and middleware.
 
-Provee:
-- `create_app()`: construye la app FastAPI con endpoints, métricas y HK.
-- Middleware de contexto de petición: IDs, logs estructurados y rate limiting.
+Provides:
+- `create_app()`: builds the FastAPI app with endpoints, metrics, and housekeeper.
+- Request context middleware: IDs, structured access logs, and rate limiting.
 
-Docstrings en estilo Google para facilitar la generación de documentación.
+Google-style docstrings to ease automatic documentation.
 """
 
 from typing import Any, Dict
@@ -25,11 +25,11 @@ from .housekeeper import Housekeeper
 
 
 class _RateLimiter:
-    """Token bucket simple por cliente IP.
+    """Simple per-client IP token bucket.
 
     Args:
-        rps (float): Tokens por segundo (media permitida).
-        burst (int): Ráfaga máxima acumulable.
+        rps (float): Tokens per second (allowed average).
+        burst (int): Maximum accumulated burst.
     """
 
     def __init__(self, rps: float, burst: int) -> None:
@@ -39,14 +39,14 @@ class _RateLimiter:
         self._buckets: dict[str, tuple[float, float]] = {}  # key -> (tokens, last_ts)
 
     def allow(self, key: str, now: float) -> bool:
-        """Consume 1 token y devuelve permiso si hay saldo.
+        """Consume 1 token and return True if allowed.
 
         Args:
-            key (str): Identificador del cliente (e.g., IP).
-            now (float): Timestamp actual.
+            key (str): Client identifier (e.g., IP).
+            now (float): Current timestamp.
 
         Returns:
-            bool: True si se permite la solicitud, False si se limita.
+            bool: True if the request is allowed, False if rate limited.
         """
         if self.rps <= 0:
             return True
@@ -68,10 +68,10 @@ except Exception:
 
 
 def create_app() -> Any:
-    """Crea e inicializa la aplicación.
+    """Create and initialize the application.
 
     Returns:
-        Any: Instancia de FastAPI (o StubApp en entornos sin FastAPI).
+        Any: FastAPI instance (or StubApp when FastAPI isn't available).
     """
     cfg: Dict[str, Any] = build_effective_config()
     if FastAPI is None:
@@ -205,6 +205,7 @@ def create_app() -> Any:
     # Background housekeeper (metrics-only currently). Metrics always-on per policy; env overrides supported.
     try:
         import os as _os
+        from contextlib import asynccontextmanager
         hk_cfg = cfg.get("housekeeper", {}) or {}
         strategies = hk_cfg.get("strategies", {}) or {}
         default_strategy = hk_cfg.get("default_strategy", "balanced")
@@ -222,19 +223,29 @@ def create_app() -> Any:
             hk = Housekeeper(app, interval_s=interval_s, disk_path=disk_path)
             app.state._housekeeper = hk  # type: ignore[attr-defined]
 
-            @app.on_event("startup")
-            async def _hk_start():  # pragma: no cover
+        @asynccontextmanager
+        async def _lifespan(_app):  # pragma: no cover
+            # startup
+            try:
+                hk_obj = getattr(_app.state, "_housekeeper", None)
+                if hk_obj:
+                    hk_obj.start()
+            except Exception:
+                pass
+            try:
+                yield
+            finally:
                 try:
-                    hk.start()
+                    hk_obj = getattr(_app.state, "_housekeeper", None)
+                    if hk_obj:
+                        hk_obj.stop()
                 except Exception:
                     pass
 
-            @app.on_event("shutdown")
-            async def _hk_stop():  # pragma: no cover
-                try:
-                    hk.stop()
-                except Exception:
-                    pass
+        try:
+            app.router.lifespan_context = _lifespan  # type: ignore[attr-defined]
+        except Exception:
+            pass
     except Exception:
         pass
     return app

@@ -34,6 +34,27 @@ api.smoke:
 mcp.run:
 	@. .venv/bin/activate; python -c "import llm_server.mcp_server as m; m.main()"
 
+.PHONY: smoke
+smoke:
+	@python3 tools/smoke_http.py
+
+.PHONY: smoke.ext
+smoke.ext:
+	@python3 tools/smoke_extended.py
+
+.PHONY: checks checks.api checks.models checks.messaging
+checks:
+	@python3 tools/test_runner.py --validate || true; python3 tools/test_runner.py --smoke || true; python3 tools/test_runner.py --fast || true
+
+checks.api:
+	@$(PY) -c "from tools.test_runner import do_checks; import sys; sys.exit(do_checks('api'))"
+
+checks.models:
+	@$(PY) -c "from tools.test_runner import do_checks; import sys; sys.exit(do_checks('models'))"
+
+checks.messaging:
+	@$(PY) -c "from tools.test_runner import do_checks; import sys; sys.exit(do_checks('messaging'))"
+
 .PHONY: docs
 docs:
 	@. .venv/bin/activate; python -m pdoc -o docs/site llm_server || echo "Instala pdoc (pip install pdoc) para generar docs HTML"
@@ -41,6 +62,32 @@ docs:
 .PHONY: test
 test:
 	@. .venv/bin/activate; PYTHONPATH=. pytest -q
+
+.PHONY: test.all test.fast test.sse test.housekeeper test.agents tui
+test.all:
+	@python3 -m pytest -q
+
+test.fast:
+	@python3 -m pytest -q tests/test_config_and_api.py tests/test_schemas_endpoints.py tests/test_info_memory_field.py tests/test_memory_ready_endpoint.py
+
+test.sse:
+	@python3 -m pytest -q tests/test_api_sse.py
+
+test.housekeeper:
+	@python3 -m pytest -q tests/test_housekeeper_*.py tests/test_metrics_housekeeper.py
+
+test.agents:
+	@python3 -m pytest -q tests/test_agents_nl_dsl.py
+
+.PHONY: test.models test.e2e
+test.models:
+	@python3 -m pytest -q tests/test_models_real.py
+
+test.e2e:
+	@python3 -m pytest -q tests/test_e2e_full.py
+
+tui:
+	@python3 tools/test_runner.py
 
 .PHONY: logs.enable logs.tail
 logs.enable:
@@ -75,3 +122,21 @@ llama.clean:
 
 models.download:
 	@HF_TOKEN="$$HF_TOKEN" $(PY) tools/models_sync.py --create --download
+
+.PHONY: start start.bg stop
+start:
+	@echo "Starting LLM-server (fg). Set PORT_LLM_SERVER to override port.";
+	@RATE_LIMIT_ENABLED=$${RATE_LIMIT_ENABLED:-0} PORT_LLM_SERVER=$${PORT_LLM_SERVER:-8081} $(PY) -m llm_server.main
+
+start.bg:
+	@echo "Starting LLM-server (bg). Logs at logs/uvicorn_local.log; PID at runtime/server.pid";
+	@mkdir -p logs runtime;
+	@RATE_LIMIT_ENABLED=$${RATE_LIMIT_ENABLED:-0} PORT_LLM_SERVER=$${PORT_LLM_SERVER:-8081} $(PY) -m llm_server.main > logs/uvicorn_local.log 2>&1 & echo $$! > runtime/server.pid; echo PID: $$(cat runtime/server.pid)
+
+stop:
+	@echo "Stopping LLM-server (bg) if running";
+	@if [ -f runtime/server.pid ]; then kill `cat runtime/server.pid` 2>/dev/null || true; rm -f runtime/server.pid; echo stopped; else echo "no runtime/server.pid"; fi
+
+.PHONY: suite
+suite:
+	@$(PY) tools/suite.py

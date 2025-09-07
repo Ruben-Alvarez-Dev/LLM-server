@@ -1,0 +1,13 @@
+model	est_ram_gb	resident	headroom_gb
+deepseek-r1-qwen-32b-q4_k_m	20	true	36
+qwen2.5-14b-instruct-q4_k_m	9	true	36
+phi-4-mini-instruct	5	true	36
+qwen2-vl-7b-instruct-q4_k_m	6	false	36
+
+Total resident: 34 GB; Headroom: 36 GB (budget 70 GB)
+
+embeddings	dimensions	purpose
+default	256	general
+code	384	code
+
+Validation OK.

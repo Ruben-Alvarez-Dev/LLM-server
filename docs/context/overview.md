@@ -39,4 +39,4 @@ Profiles
 Profiles and Multi-instance
 - One LLM-server process serves one active profile at a time, selected via `runtime/current_profile` (or ENV overrides for ports).
 - To serve multiple profiles concurrently (e.g., `dev` and `office`), run multiple instances bound to different base ports. Use the 7x/7y rule: if base is `B000`, agents live at `B100+NN`, models at `B200+NN`.
-- `GET /info` and `GET /v1/ports` advertise the mapping so external tools can connect “a ciegas”.
+- `GET /info` and `GET /v1/ports` advertise the mapping so external tools can connect "blindly" (without prior configuration).

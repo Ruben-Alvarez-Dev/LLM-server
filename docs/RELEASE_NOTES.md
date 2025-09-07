@@ -1,21 +1,21 @@
-LLM-server 0.1.0 — Beacons y Soft‑Eviction (preparado)
+LLM-server 0.1.0 — Beacons and Soft‑Eviction (prepared)
 
-Lo nuevo
-- Beacons RAM/SSD (ok/warn/hot/critical) derivados de métricas en vivo.
-- Beacons expuestos en `/info.housekeeper.beacons` y en cada `housekeeper.tick` de logs.
-- `ram_headroom_gb` documentado y usado para el beacon de RAM.
-- Soft‑eviction de SSD preparado por tick, detrás de `actions_enabled` (desactivado por defecto).
-- Planificación de evicción en logs; ejecución respeta un límite por tick y directorios candidatos.
+What’s New
+- RAM/SSD beacons (ok/warn/hot/critical) derived from live metrics.
+- Beacons exposed under `/info.housekeeper.beacons` and in each `housekeeper.tick` log.
+- `ram_headroom_gb` documented and used for the RAM beacon.
+- SSD soft‑eviction prepared per tick, gated by `actions_enabled` (disabled by default).
+- Eviction planning in logs; execution respects a per‑tick limit and candidate directories.
 
-Detalles
-- Umbrales RAM: warn ≤ 6 GB, hot ≤ 2 GB, critical ≤ 0 GB; si no, ok.
-- Umbrales SSD: warn ≥ soft watermark, hot ≥ hard watermark, critical con libre muy bajo (≤ 2 GB) o presión extrema.
-- `/info` incluye estrategia activa, watermarks, `actions_enabled`, beacons y snapshot en vivo (si existe).
-- Directorios candidatos por defecto: `logs/`, `runtime/agents/` y caches bajo `{models_root}` (`_cache` y `cache`). `ssd.evict_dirs` añade rutas y se fusiona con los defaults.
-- Límite de evicción por tick controlado por `ssd.max_evict_per_tick_gb`.
+Details
+- RAM thresholds: warn ≤ 6 GB, hot ≤ 2 GB, critical ≤ 0 GB; otherwise ok.
+- SSD thresholds: warn ≥ soft watermark, hot ≥ hard watermark, critical with very low free (≤ 2 GB) or extreme pressure.
+- `/info` includes active strategy, watermarks, `actions_enabled`, beacons, and a live snapshot (when present).
+- Default candidate directories: `logs/`, `runtime/agents/`, and caches under `{models_root}` (`_cache` and `cache`). `ssd.evict_dirs` adds paths and merges with defaults.
+- Per‑tick eviction cap controlled by `ssd.max_evict_per_tick_gb`.
 
-Pruebas
-- Cobertura para beacons en `/info`, snapshot, fallback sin HK, planificación y ejecución de evicción, y métricas del HK.
+Tests
+- Coverage for beacons in `/info`, snapshot, fallback without HK, eviction planning and execution, and HK metrics.
 
-Compatibilidad
-- Sin cambios incompatibles. Campos nuevos bajo `/info.housekeeper`.
+Compatibility
+- No breaking changes. New fields under `/info.housekeeper`.

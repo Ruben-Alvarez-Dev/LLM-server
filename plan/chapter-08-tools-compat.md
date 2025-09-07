@@ -9,12 +9,11 @@ Checkpoints
 2. [ ] Function-calling request parsing: tools[] JSON Schema, tool_choice (auto|none|{function})
 3. [ ] SSE streaming for tool_calls deltas (id/name/arguments)
 4. [ ] Execution loop (opt-in): run_tools=true → tool call → tool result → assistant follow-up
-5. [ ] Continue modes presets finalized; alias con `continue_mode` y presets en configs/api.yaml
+5. [ ] Continue modes presets finalized; alias with `continue_mode` and presets in configs/api.yaml
 6. [ ] Copilot FIM: support `suffix` + prompt template; add stops and penalties if needed
 7. [ ] Update docs/api-compat.md with exact examples and edge-cases
 
 Acceptance Criteria
-- Endpoints aceptan tools y devuelven tool_calls con SSE correcto.
-- Mapeos Plan/Act/Reflect/Continue verificables con clientes conocidos.
-- FIM funciona para casos de infill; tests de smoke incl. suffix.
-
+- Endpoints accept tools and return tool_calls with correct SSE streaming.
+- Plan/Act/Reflect/Continue mappings verifiable with known clients.
+- FIM works for infill cases; smoke tests include suffix.
